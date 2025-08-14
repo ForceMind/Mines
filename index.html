@@ -3,77 +3,83 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
-<title>找地雷｜可撤退版</title>
+<title>找地雷</title>
 <style>
   :root{
-    --bg:#0f172a;
-    --panel:#111827;
-    --accent:#22c55e;
-    --warn:#ef4444;
-    --text:#e5e7eb;
-    --muted:#9ca3af;
-    --btn:#1f2937;
-    --btn2:#334155;
-    --grid:#0b1220;
-    --safe:#0ea5e9;
+    /* 调亮后的配色 */
+    --bg1:#0e1f3a;
+    --bg2:#15365f;
+    --panel:#102747;
+    --panel2:#16385f;
+    --accent:#22d3ee;   /* 青色更亮 */
+    --warn:#f87171;     /* 红更亮 */
+    --text:#f3f4f6;
+    --muted:#c7d2fe;
+    --btn:#1e3a8a;
+    --btn2:#25469e;
+    --grid:#0f2444;
+    --safe:#38bdf8;
     --mine:#ef4444;
-    --gold:#fbbf24;
+    --gold:#fde68a;
   }
   *{box-sizing:border-box}
   body{
-    margin:0;background:linear-gradient(180deg,#0b1220,#0f172a 40%,#0b1220);
+    margin:0;background:linear-gradient(180deg,var(--bg1),var(--bg2) 50%,var(--bg1));
     color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;
     min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;
   }
   .app{width:100%;max-width:1100px;display:grid;grid-template-columns:340px 1fr;gap:16px}
   @media (max-width:900px){.app{grid-template-columns:1fr}}
   .card{
-    background:linear-gradient(180deg,#0f172a,#0b1220);
-    border:1px solid #1f2937;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.35);
+    background:linear-gradient(180deg,var(--panel),var(--panel2));
+    border:1px solid rgba(255,255,255,.12);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.35);
   }
   .panel{padding:16px 16px 12px}
   h1{margin:0 0 12px;font-size:20px;letter-spacing:.2px}
   .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0}
-  label{font-size:12px;color:var(--muted)}
-  select,input{background:var(--btn2);border:1px solid #263244;color:var(--text);padding:10px 12px;border-radius:10px;outline:none}
+  label{font-size:12px;color:var(--gold)}
+  select,input{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);color:var(--text);padding:10px 12px;border-radius:10px;outline:none}
   input[type="number"]{width:120px}
-  .btn{background:var(--btn);border:1px solid #253244;color:var(--text);padding:10px 14px;border-radius:10px;cursor:pointer;transition:.15s;
-       user-select:none}
-  .btn:hover{transform:translateY(-1px)}
-  .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
-  .btn-primary{background:linear-gradient(180deg,#16a34a,#15803d);border-color:#14532d}
-  .btn-danger{background:linear-gradient(180deg,#dc2626,#b91c1c);border-color:#7f1d1d}
-  .btn-gold{background:linear-gradient(180deg,#fbbf24,#f59e0b);border-color:#b45309;color:#1f2937}
-  .balance{
-    display:flex;justify-content:space-between;align-items:center;background:#0b1220;border-top:1px solid #1f2937;padding:12px 16px;border-radius:0 0 16px 16px
+  .btn{
+    background:var(--btn);border:1px solid rgba(255,255,255,.2);color:#fff;padding:10px 14px;border-radius:10px;cursor:pointer;transition:.15s;
+    user-select:none;box-shadow:0 4px 10px rgba(30,58,138,.35)
   }
-  .balance strong{color:var(--gold);font-size:18px}
+  .btn:hover{transform:translateY(-1px)}
+  .btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+  .btn-primary{background:linear-gradient(180deg,#1fb6ff,#1d4ed8)}
+  .btn-danger{background:linear-gradient(180deg,#ef4444,#b91c1c)}
+  .btn-gold{background:linear-gradient(180deg,#fde68a,#f59e0b);color:#1f2937}
+  .balance{
+    display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.04);
+    border-top:1px solid rgba(255,255,255,.12);padding:12px 16px;border-radius:0 0 16px 16px
+  }
+  .balance strong{color:var(--gold);font-size:18px;text-shadow:0 0 8px rgba(253,230,138,.35)}
   .gridWrap{padding:16px}
   .grid{
-    display:grid;gap:8px;justify-content:center;align-content:center;padding:12px;background:#0a1020;border-radius:12px;border:1px solid #1f2937;
-    min-height:420px
+    display:grid;gap:8px;justify-content:center;align-content:center;padding:12px;background:linear-gradient(180deg,#0b1d3a,#0f2b55);
+    border-radius:12px;border:1px solid rgba(255,255,255,.12);min-height:420px
   }
   .cell{
     width:52px;height:52px;display:flex;align-items:center;justify-content:center;
-    background:radial-gradient(100% 100% at 50% 0%, #1c2738 0%, #121a28 100%);
-    border:1px solid #223048;border-radius:10px;cursor:pointer;user-select:none;
-    font-weight:700;font-size:16px;color:#93c5fd;box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 6px 14px rgba(0,0,0,.25);
+    background:radial-gradient(100% 100% at 50% 0%, #2a4f8c 0%, #1a3766 100%);
+    border:1px solid rgba(255,255,255,.18);border-radius:10px;cursor:pointer;user-select:none;
+    font-weight:800;font-size:16px;color:#e0f2fe;box-shadow:inset 0 1px 0 rgba(255,255,255,.25), 0 6px 14px rgba(0,0,0,.25);
     transition:transform .08s ease, background .2s, border-color .2s;
   }
   .cell:hover{transform:translateY(-2px)}
-  .cell.revealed{cursor:default;background:#0d1524;border-color:#1e293b;color:#60a5fa}
-  .cell.mine{background:#2a0f13;border-color:#7f1d1d;color:#fecaca}
+  .cell.revealed{cursor:default;background:#19406f;border-color:rgba(255,255,255,.3);color:#c7d2fe}
+  .cell.mine{background:#7f1d1d;border-color:#fecaca;color:#fecaca}
   .stats{
-    display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 16px;border-top:1px solid #1f2937;background:#0b1220;border-radius:0 0 16px 16px
+    display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 16px;border-top:1px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.04);border-radius:0 0 16px 16px
   }
-  .statBox{background:#0b162a;border:1px solid #1f2937;border-radius:12px;padding:10px}
-  .statLabel{font-size:12px;color:var(--muted)}
+  .statBox{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:10px}
+  .statLabel{font-size:12px;color:#bbf7d0}
   .statValue{font-size:18px;margin-top:6px}
   .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
-  .log{padding:10px 16px;border-top:1px solid #1f2937;background:#0b1220;max-height:160px;overflow:auto;border-radius:0 0 16px 16px}
-  .log p{margin:6px 0;color:#cbd5e1;font-size:13px}
-  .tip{color:var(--muted);font-size:12px;margin-top:4px}
-  .divider{height:1px;background:#1f2937;margin:10px 0}
+  .log{padding:10px 16px;border-top:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);max-height:160px;overflow:auto;border-radius:0 0 16px 16px}
+  .log p{margin:6px 0;color:#e5e7eb;font-size:13px}
+  .tip{color:#d1fae5;font-size:12px;margin-top:4px}
 </style>
 </head>
 <body>
@@ -106,7 +112,10 @@
         <button id="cashoutBtn" class="btn btn-gold" disabled>撤退并结算</button>
         <button id="resetBtn" class="btn">本局重开</button>
       </div>
-      <div class="tip">说明：撤退奖金 = 下注 × <b>0.97</b> × C(N, k) / C(N−M, k)。N=总格子，M=雷数，k=已成功点开的安全格。</div>
+      <div class="tip">
+        说明：撤退奖金 = <b>下注金额 × 0.97 ÷ 当前“下一格安全概率”</b>。  
+        （下一格安全概率 = 仍未打开安全格数 ÷ 仍未打开总格子数）
+      </div>
     </div>
     <div class="stats">
       <div class="statBox">
@@ -166,69 +175,39 @@
 
   // ------- 工具函数 -------
   const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
-
-  // 组合数 C(n,k) 使用乘法形式避免溢出/精度损失（n<=64 安全）
-  function comb(n,k){
-    if(k<0||k>n) return 0;
-    if(k===0||k===n) return 1;
-    k = Math.min(k, n-k);
-    let num = 1, den = 1;
-    for(let i=1;i<=k;i++){
-      num *= (n - k + i);
-      den *= i;
-    }
-    return num/den;
-  }
-
-  // 公平赔率（生存 k 步并撤退）：mult = C(N,k)/C(N−M,k)；抽水 3%
-  function fairMultiplier(N,M,k){
-    if(k===0) return 1; // 未点击撤退=返还本金（但我们 UI 不允许）
-    const top = comb(N, k);
-    const bottom = comb(N - M, k);
-    if(bottom<=0) return 0;
-    return top / bottom;
-  }
-
-  function formatMoney(x){ return (+x).toFixed(2); }
-
-  function log(msg){
-    const p = document.createElement('p');
-    p.textContent = msg;
-    logEl.prepend(p);
-    // 保持最多 60 行
-    while(logEl.children.length>60){ logEl.removeChild(logEl.lastChild); }
-  }
+  const formatMoney = (x)=> (+x).toFixed(2);
+  const log = (msg)=>{ const p=document.createElement('p'); p.textContent=msg; logEl.prepend(p); while(logEl.children.length>60) logEl.removeChild(logEl.lastChild); };
 
   function updateHUD(){
-    const k = revealed.size;
-    safeClicksEl.textContent = k;
-
     const total = N*N;
-    const opened = revealed.size; // 只统计安全格；雷未点开
-    const remainCells = total - opened - (exploded?1:0); // 若已爆炸，这个值无意义
-    const remainSafe = (total - M) - opened;
-
+    const opened = revealed.size; // 只统计安全格
+    const remainCells = total - opened;             // 仍未打开的总格子（含雷与未开的安全格）
+    const remainSafe  = (total - M) - opened;       // 仍未打开的安全格
     if(gameActive && !exploded){
-      const nextP = remainCells>0 ? remainSafe / remainCells : 0;
+      const nextP = remainCells>0 ? remainSafe/remainCells : 0;
       nextProbEl.textContent = (nextP*100).toFixed(2) + '%';
-      const mult = fairMultiplier(total, M, k);
-      const cash = k>0 ? bet * 0.97 * mult : 0;
-      cashoutValueEl.textContent = k>0 ? formatMoney(cash) : '—';
-      cashoutBtn.disabled = (k===0);
+      const k = revealed.size;
+      if(k>0 && nextP>0){
+        const cash = bet * 0.97 / nextP;            // 新公式：bet / p_safe * 0.97
+        cashoutValueEl.textContent = formatMoney(cash);
+        cashoutBtn.disabled = false;
+      }else{
+        cashoutValueEl.textContent = '—';
+        cashoutBtn.disabled = true;
+      }
     }else{
       nextProbEl.textContent = '—';
       cashoutValueEl.textContent = '—';
       cashoutBtn.disabled = true;
     }
-
     balanceText.textContent = formatMoney(balance);
+    safeClicksEl.textContent = revealed.size;
   }
 
   function buildGrid(){
     gridEl.innerHTML = '';
     gridEl.style.gridTemplateColumns = `repeat(${N}, minmax(40px, 52px))`;
     gridEl.style.minHeight = (N<8?380:420)+'px';
-
     for(let i=0;i<N*N;i++){
       const cell = document.createElement('div');
       cell.className = 'cell';
@@ -241,7 +220,6 @@
   function placeMines(){
     mines.clear();
     const total = N*N;
-    // 随机放置 M 个不同索引
     while(mines.size < M){
       mines.add(Math.floor(Math.random()*total));
     }
@@ -254,9 +232,7 @@
       for(let dx=-1;dx<=1;dx++){
         if(dx===0 && dy===0) continue;
         const nx=x+dx, ny=y+dy;
-        if(nx>=0 && nx<N && ny>=0 && ny<N){
-          res.push(ny*N + nx);
-        }
+        if(nx>=0 && nx<N && ny>=0 && ny<N){ res.push(ny*N + nx); }
       }
     }
     return res;
@@ -274,7 +250,7 @@
     const n = countAdjMines(idx);
     el.classList.add('revealed');
     el.textContent = n>0 ? n : '';
-    el.style.color = n===0 ? '#93c5fd' : '#60a5fa';
+    el.style.color = n===0 ? '#e0f2fe' : '#bbf7d0';
   }
 
   function revealAllMines(){
@@ -290,8 +266,15 @@
   function onCellClick(e){
     if(!gameActive || exploded) return;
     const idx = +e.currentTarget.dataset.idx;
-    // 已揭示的不处理
     if(revealed.has(idx)) return;
+
+    // 计算“本次点击前”的当盘安全概率（用于胜利自动结算）
+    const total = N*N;
+    const openedBefore = revealed.size;
+    const remainCellsBefore = total - openedBefore;
+    const remainSafeBefore  = (total - M) - openedBefore;
+    const pBefore = remainCellsBefore>0 ? (remainSafeBefore/remainCellsBefore) : 0;
+    const payoutIfWinThisClick = (openedBefore>=0 && pBefore>0) ? bet * 0.97 / pBefore : 0;
 
     if(mines.has(idx)){
       // 触雷
@@ -307,27 +290,16 @@
 
     // 安全
     reveal(idx);
-    // 若空白可扩散，也可以做递归展开（这里保持谨慎：只单击揭示）
-    const n = countAdjMines(idx);
-    if(n===0){
-      // 可选择“轻度自动展开”——展开其周围非雷未点开的 0 邻雷格
-      neighbors(idx).forEach(j=>{
-        if(!mines.has(j) && !revealed.has(j) && countAdjMines(j)===0){
-          reveal(j);
-        }
-      });
-    }
 
     // 胜利条件（全部安全格开完）
-    const totalSafe = N*N - M;
+    const totalSafe = total - M;
     if(revealed.size >= totalSafe){
-      const k = revealed.size;
-      const mult = fairMultiplier(N*N, M, k);
-      const payout = bet * 0.97 * mult; // k=totalSafe 的情况
-      balance += payout;
-      log(`🏆 全部安全格已揭示！自动按撤退结算，获得 ${formatMoney(payout)}。`);
+      balance += payoutIfWinThisClick; // 使用“本次点击前”的当盘概率结算
+      log(`🏆 全部安全格已揭示！自动结算到手 ${formatMoney(payoutIfWinThisClick)}（按最后一次点击前的当盘概率）。`);
       gameActive = false;
-      revealAllMines(); // 展示全图（其实没有未揭示安全格了）
+      revealAllMines();
+      updateHUD();
+      return;
     }
 
     updateHUD();
@@ -371,8 +343,8 @@
       return;
     }
     balance -= bet;
-    resetRound(true); // 清空棋盘但保留余额变化
-    validateSettings(); // 确保 N/M 与输入一致
+    resetRound(true);
+    validateSettings();
     placeMines();
     gameActive = true;
     exploded = false;
@@ -382,15 +354,22 @@
 
   cashoutBtn.addEventListener('click', ()=>{
     if(!gameActive || exploded) return;
-    const k = revealed.size;
-    if(k<=0){
+    const total = N*N;
+    const opened = revealed.size;
+    const remainCells = total - opened;
+    const remainSafe  = (total - M) - opened;
+    if(opened<=0){
       log('ℹ️ 尚未点击安全格，无法撤退结算。');
       return;
     }
-    const mult = fairMultiplier(N*N, M, k);
-    const payout = bet * 0.97 * mult;
+    if(remainSafe<=0 || remainCells<=0){
+      log('ℹ️ 当前无法按当盘概率结算。');
+      return;
+    }
+    const nextP = remainSafe/remainCells;
+    const payout = bet * 0.97 / nextP;
     balance += payout;
-    log(`💰 撤退成功：安全点击 ${k} 格，赔率 ×${mult.toFixed(4)}，到手 ${formatMoney(payout)}。`);
+    log(`💰 撤退成功：当前下一格安全概率 ${(nextP*100).toFixed(2)}%，到手 ${formatMoney(payout)}。`);
     gameActive = false;
     revealAllMines();
     updateHUD();
@@ -436,8 +415,7 @@
   // 初始
   validateSettings();
   resetRound(true);
-  log('📌 规则：点击安全格可继续，在未触雷时随时“撤退并结算”。赔率按组合数学计算，抽水 3%。');
-
+  log('📌 规则：点击安全格可继续，在未触雷时随时撤退。撤退奖金 = 下注 × 0.97 ÷ 当前“下一格安全概率”。');
 })();
 </script>
 </body>
