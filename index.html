@@ -8,7 +8,7 @@
   :root{
     --bg1:#0e1f3a; --bg2:#15365f; --panel:#102747; --panel2:#16385f;
     --accent:#22d3ee; --warn:#f87171; --text:#f3f4f6; --muted:#c7d2fe;
-    --btn:#1e3a8a; --btn2:#25469e; --safe:#38bdf8; --mine:#ef4444; --gold:#fde68a;
+    --btn:#1e3a8a; --btn2:#25469e; --safe:#22c55e; --mine:#ef4444; --gold:#fde68a;
     --ink:#0f172a; --ink2:#1f2937;
   }
   *{box-sizing:border-box}
@@ -50,16 +50,17 @@
   .stepper button:active{transform:translateY(1px)}
   .stepper input{border:none;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb}
 
-  /* —— 按钮动效 —— */
+  /* —— 按钮（根据状态换色） —— */
   .btn{
-    background:var(--btn);border:1px solid rgba(255,255,255,.2);color:#fff;padding:10px 14px;border-radius:10px;cursor:pointer;
+    border:1px solid rgba(255,255,255,.2);color:#fff;padding:10px 14px;border-radius:10px;cursor:pointer;
     transition:transform .12s ease, box-shadow .12s ease, filter .12s ease;
-    user-select:none;box-shadow:0 6px 14px rgba(30,58,138,.35)
+    user-select:none;box-shadow:0 6px 14px rgba(0,0,0,.25)
   }
-  .btn:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(30,58,138,.45)}
+  .btn:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(0,0,0,.35)}
   .btn:active{transform:translateY(0);filter:brightness(0.95)}
   .btn:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:none}
-  .btn-primary{background:linear-gradient(180deg,#1fb6ff,#1d4ed8)}
+  .btn-start{background:linear-gradient(180deg,#1fb6ff,#1d4ed8)}   /* 开始：蓝 */
+  .btn-reset{background:linear-gradient(180deg,#ef4444,#b91c1c)}   /* 重开：红 */
   .btn-gold{background:linear-gradient(180deg,#fde68a,#f59e0b);color:#1f2937}
   .btn-icon{
     width:36px;height:36px;border-radius:999px;border:1px solid rgba(255,255,255,.25);
@@ -87,21 +88,21 @@
     width:52px;height:52px;display:flex;align-items:center;justify-content:center;
     background:radial-gradient(100% 100% at 50% 0%, #2a4f8c 0%, #1a3766 100%);
     border:1px solid rgba(255,255,255,.18);border-radius:10px;cursor:pointer;user-select:none;
-    transition:transform .08s ease, background .2s, border-color .2s, box-shadow .2s;
+    transition:transform .08s ease, background .25s, border-color .25s, box-shadow .2s, filter .2s;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.15), 0 6px 14px rgba(0,0,0,.25);
     position:relative;overflow:hidden;
   }
   .cell:hover{transform:translateY(-2px)}
   .cell:active{transform:translateY(0);filter:brightness(0.98)}
-  .cell.revealed{cursor:default;background:#19406f;border-color:rgba(255,255,255,.3)}
+  /* 安全格被点击后 → 明显的绿色，并带光晕 */
+  .cell.revealed{cursor:default;background:linear-gradient(180deg,#1b5e37,#16884e);border-color:rgba(34,197,94,.7)}
   .cell.mine{background:#7f1d1d;border-color:#fecaca;color:#fecaca}
 
   /* 安全格被点开后的扩散光晕 */
   .cell.flash::after{
     content:"";position:absolute;inset:-10%;border-radius:12px;
-    background:radial-gradient(circle, rgba(56,189,248,.55) 0%, rgba(56,189,248,0) 60%);
-    animation:flashGlow 1s ease-out forwards;
-    pointer-events:none;
+    background:radial-gradient(circle, rgba(34,197,94,.55) 0%, rgba(34,197,94,0) 60%);
+    animation:flashGlow 1s ease-out forwards; pointer-events:none;
   }
   @keyframes flashGlow{
     0%{opacity:0;transform:scale(.8)}
@@ -144,7 +145,7 @@
           <label>地雷数量</label><br>
           <div class="stepper">
             <button id="mineMinus" type="button">−</button>
-            <input id="mineCount" class="num" type="number" value="10" min="1" step="1">
+            <input id="mineCount" class="num" type="number" value="12" min="1" step="1">
             <button id="minePlus" type="button">+</button>
           </div>
         </div>
@@ -156,7 +157,7 @@
       </div>
 
       <div class="row">
-        <button id="startResetBtn" class="btn btn-primary">开始游戏</button>
+        <button id="startResetBtn" class="btn btn-start">开始游戏</button>
         <button id="cashoutBtn" class="btn btn-gold" disabled>撤退并结算</button>
       </div>
 
@@ -200,7 +201,7 @@
 <script>
 (function(){
   // ------- 状态 -------
-  let N=8, M=10;
+  let N=8, M=12; // 默认 8×8 → 12 雷
   let mines=new Set(), revealed=new Set();
   let gameActive=false, exploded=false;
   let bet=10, balance=1000;
@@ -225,6 +226,18 @@
   const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
   const formatMoney=x=>(+x).toFixed(2);
   const log=msg=>{const p=document.createElement('p');p.textContent=msg;logEl.prepend(p);while(logEl.children.length>60)logEl.removeChild(logEl.lastChild);};
+
+  // 不同棋盘的默认地雷数
+  function defaultMines(size){
+    const map={4:3, 5:5, 6:8, 8:12};
+    return map[size] ?? Math.max(1, Math.floor(size*size*0.18));
+  }
+
+  function updateStartBtn(isStart){
+    startResetBtn.textContent = isStart ? '开始游戏' : '重开游戏';
+    startResetBtn.classList.toggle('btn-start', isStart);
+    startResetBtn.classList.toggle('btn-reset', !isStart);
+  }
 
   function updateHUD(){
     const total=N*N, opened=revealed.size;
@@ -270,15 +283,13 @@
     while(mines.size<M) mines.add(Math.floor(Math.random()*N*N));
   }
 
-  // 不显示数字：只做 reveal + 动效
+  // 不显示数字：只做 reveal + 动效（绿色）
   function reveal(idx){
     if(revealed.has(idx)) return;
     revealed.add(idx);
     const el=gridEl.children[idx];
-    el.classList.add('revealed','flash');              // 添加光晕动画
-    el.addEventListener('animationend',()=>{           // 动画结束移除 class
-      el.classList.remove('flash');
-    },{once:true});
+    el.classList.add('revealed','flash');
+    el.addEventListener('animationend',()=>{ el.classList.remove('flash'); },{once:true});
   }
   function revealAllMines(){
     mines.forEach(i=>{
@@ -303,7 +314,7 @@
       exploded=true; revealAllMines();
       e.currentTarget.classList.add('mine'); e.currentTarget.textContent='💥';
       log(`💥 触雷，损失 ${formatMoney(bet)}`);
-      gameActive=false; startResetBtn.textContent='开始游戏';
+      gameActive=false; updateStartBtn(true);
       updateHUD(); return;
     }
 
@@ -313,7 +324,7 @@
     if(revealed.size >= total - M){
       balance += payoutIfWin;
       log(`🏆 全清，获得 ${formatMoney(payoutIfWin)}（按最后一次点击前的当盘概率）`);
-      gameActive=false; revealAllMines(); startResetBtn.textContent='开始游戏';
+      gameActive=false; revealAllMines(); updateStartBtn(true);
       updateHUD(); return;
     }
 
@@ -323,6 +334,13 @@
   // ------- 交互 -------
   function validateSettings(){
     N = parseInt(boardSizeEl.value,10) || 8;
+
+    // 根据棋盘自动设置默认雷数（仅在未进行中时生效）
+    if(!gameActive){
+      const def = defaultMines(N);
+      mineCountEl.value = def;
+    }
+
     let m = parseInt(mineCountEl.value,10);
     m = clamp(isNaN(m)?1:m, 1, N*N - 1);
     M = m; mineCountEl.value = m;
@@ -342,7 +360,7 @@
     if(gameActive){
       // 重开
       resetBoardUI(false);
-      startResetBtn.textContent='开始游戏';
+      updateStartBtn(true);
       log('🔄 已重置本局（不影响余额）');
       return;
     }
@@ -354,7 +372,7 @@
     validateSettings();
     placeMines();
     gameActive=true;
-    startResetBtn.textContent='重开游戏';
+    updateStartBtn(false);
     log(`🎮 新局：${N}×${N}，雷 ${M}，下注 ${formatMoney(bet)}（已扣款）`);
     updateHUD();
   });
@@ -369,14 +387,20 @@
     const payout = bet*0.97/p;
     balance += payout;
     log(`💰 撤退获得 ${formatMoney(payout)}（当前安全概率 ${(p*100).toFixed(2)}%）`);
-    gameActive=false; revealAllMines(); startResetBtn.textContent='开始游戏';
+    gameActive=false; revealAllMines(); updateStartBtn(true);
     updateHUD();
   });
 
-  // 棋盘大小变化
+  // 棋盘大小变化：未进行中才替换默认雷数
   boardSizeEl.addEventListener('change', ()=>{
-    validateSettings(); resetBoardUI(false);
-    log(`🧩 棋盘切换为 ${N}×${N}，请设置雷数与下注后开始`);
+    const wasActive = gameActive;
+    validateSettings();
+    if(!wasActive){
+      resetBoardUI(false);
+      log(`🧩 棋盘切换为 ${N}×${N}（默认雷数 ${M}），请设置下注后开始`);
+    }else{
+      log('ℹ️ 本局进行中，棋盘大小变更将于重开后生效');
+    }
   });
 
   // 地雷数：输入框直接改
@@ -391,23 +415,16 @@
     log(`🧨 地雷数量设为 ${M}`);
   });
 
-  // 地雷数：减按钮
-  mineMinusBtn.addEventListener('click', ()=>{
+  // 地雷数：减/加按钮
+  function stepMine(delta){
     if(gameActive){ log('⚠️ 本局进行中，无法修改地雷数'); return; }
     validateSettings();
-    mineCountEl.value = clamp(parseInt(mineCountEl.value,10)-1, 1, N*N-1);
+    mineCountEl.value = clamp(parseInt(mineCountEl.value,10)+delta, 1, N*N-1);
     validateSettings(); resetBoardUI(false);
     log(`🧨 地雷数量设为 ${M}`);
-  });
-
-  // 地雷数：加按钮
-  minePlusBtn.addEventListener('click', ()=>{
-    if(gameActive){ log('⚠️ 本局进行中，无法修改地雷数'); return; }
-    validateSettings();
-    mineCountEl.value = clamp(parseInt(mineCountEl.value,10)+1, 1, N*N-1);
-    validateSettings(); resetBoardUI(false);
-    log(`🧨 地雷数量设为 ${M}`);
-  });
+  }
+  mineMinusBtn.addEventListener('click', ()=>stepMine(-1));
+  minePlusBtn.addEventListener('click', ()=>stepMine(+1));
 
   // 下注金额
   betAmountEl.addEventListener('change', ()=>{
@@ -425,7 +442,7 @@
   });
 
   // 初始
-  validateSettings(); buildGrid(); updateHUD();
+  validateSettings(); buildGrid(); updateHUD(); updateStartBtn(true);
 })();
 </script>
 </body>
