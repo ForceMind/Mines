@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+<title>找地雷｜可撤退版</title>
+<style>
+  :root{
+    --bg:#0f172a;
+    --panel:#111827;
+    --accent:#22c55e;
+    --warn:#ef4444;
+    --text:#e5e7eb;
+    --muted:#9ca3af;
+    --btn:#1f2937;
+    --btn2:#334155;
+    --grid:#0b1220;
+    --safe:#0ea5e9;
+    --mine:#ef4444;
+    --gold:#fbbf24;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:linear-gradient(180deg,#0b1220,#0f172a 40%,#0b1220);
+    color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;
+    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;
+  }
+  .app{width:100%;max-width:1100px;display:grid;grid-template-columns:340px 1fr;gap:16px}
+  @media (max-width:900px){.app{grid-template-columns:1fr}}
+  .card{
+    background:linear-gradient(180deg,#0f172a,#0b1220);
+    border:1px solid #1f2937;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  .panel{padding:16px 16px 12px}
+  h1{margin:0 0 12px;font-size:20px;letter-spacing:.2px}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0}
+  label{font-size:12px;color:var(--muted)}
+  select,input{background:var(--btn2);border:1px solid #263244;color:var(--text);padding:10px 12px;border-radius:10px;outline:none}
+  input[type="number"]{width:120px}
+  .btn{background:var(--btn);border:1px solid #253244;color:var(--text);padding:10px 14px;border-radius:10px;cursor:pointer;transition:.15s;
+       user-select:none}
+  .btn:hover{transform:translateY(-1px)}
+  .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  .btn-primary{background:linear-gradient(180deg,#16a34a,#15803d);border-color:#14532d}
+  .btn-danger{background:linear-gradient(180deg,#dc2626,#b91c1c);border-color:#7f1d1d}
+  .btn-gold{background:linear-gradient(180deg,#fbbf24,#f59e0b);border-color:#b45309;color:#1f2937}
+  .balance{
+    display:flex;justify-content:space-between;align-items:center;background:#0b1220;border-top:1px solid #1f2937;padding:12px 16px;border-radius:0 0 16px 16px
+  }
+  .balance strong{color:var(--gold);font-size:18px}
+  .gridWrap{padding:16px}
+  .grid{
+    display:grid;gap:8px;justify-content:center;align-content:center;padding:12px;background:#0a1020;border-radius:12px;border:1px solid #1f2937;
+    min-height:420px
+  }
+  .cell{
+    width:52px;height:52px;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(100% 100% at 50% 0%, #1c2738 0%, #121a28 100%);
+    border:1px solid #223048;border-radius:10px;cursor:pointer;user-select:none;
+    font-weight:700;font-size:16px;color:#93c5fd;box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 6px 14px rgba(0,0,0,.25);
+    transition:transform .08s ease, background .2s, border-color .2s;
+  }
+  .cell:hover{transform:translateY(-2px)}
+  .cell.revealed{cursor:default;background:#0d1524;border-color:#1e293b;color:#60a5fa}
+  .cell.mine{background:#2a0f13;border-color:#7f1d1d;color:#fecaca}
+  .stats{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 16px;border-top:1px solid #1f2937;background:#0b1220;border-radius:0 0 16px 16px
+  }
+  .statBox{background:#0b162a;border:1px solid #1f2937;border-radius:12px;padding:10px}
+  .statLabel{font-size:12px;color:var(--muted)}
+  .statValue{font-size:18px;margin-top:6px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .log{padding:10px 16px;border-top:1px solid #1f2937;background:#0b1220;max-height:160px;overflow:auto;border-radius:0 0 16px 16px}
+  .log p{margin:6px 0;color:#cbd5e1;font-size:13px}
+  .tip{color:var(--muted);font-size:12px;margin-top:4px}
+  .divider{height:1px;background:#1f2937;margin:10px 0}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- 左侧：控制面板 -->
+  <div class="card">
+    <div class="panel">
+      <h1>找地雷｜可撤退</h1>
+      <div class="row">
+        <div>
+          <label>棋盘大小</label><br>
+          <select id="boardSize">
+            <option value="4">4 × 4</option>
+            <option value="5">5 × 5</option>
+            <option value="6">6 × 6</option>
+            <option value="8" selected>8 × 8</option>
+          </select>
+        </div>
+        <div>
+          <label>地雷数量</label><br>
+          <input id="mineCount" type="number" value="10" min="1" step="1">
+        </div>
+        <div>
+          <label>下注金额</label><br>
+          <input id="betAmount" type="number" value="10" min="1" step="1">
+        </div>
+      </div>
+      <div class="toolbar">
+        <button id="startBtn" class="btn btn-primary">开始游戏（扣款）</button>
+        <button id="cashoutBtn" class="btn btn-gold" disabled>撤退并结算</button>
+        <button id="resetBtn" class="btn">本局重开</button>
+      </div>
+      <div class="tip">说明：撤退奖金 = 下注 × <b>0.97</b> × C(N, k) / C(N−M, k)。N=总格子，M=雷数，k=已成功点开的安全格。</div>
+    </div>
+    <div class="stats">
+      <div class="statBox">
+        <div class="statLabel">已安全点击 (k)</div>
+        <div class="statValue" id="safeClicks">0</div>
+      </div>
+      <div class="statBox">
+        <div class="statLabel">下一格安全概率</div>
+        <div class="statValue" id="nextProb">—</div>
+      </div>
+      <div class="statBox">
+        <div class="statLabel">当前可撤退奖金</div>
+        <div class="statValue" id="cashoutValue">—</div>
+      </div>
+    </div>
+    <div class="balance">
+      <div>余额</div>
+      <div>
+        <strong id="balanceText">1000.00</strong>
+        <button id="add100" class="btn" style="margin-left:8px;">+100</button>
+      </div>
+    </div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <!-- 右侧：棋盘 -->
+  <div class="card gridWrap">
+    <div id="grid" class="grid"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ------- 状态 -------
+  let N = 8, M = 10;                    // N*N 总格子；M 地雷数
+  let mines = new Set();                 // 地雷位置集合（索引）
+  let revealed = new Set();              // 已揭示安全格（索引）
+  let gameActive = false;                // 是否进行中
+  let exploded = false;                  // 是否已触雷
+  let bet = 10;                          // 本局下注
+  let balance = 1000;                    // 余额
+  let gridEl = document.getElementById('grid');
+
+  const boardSizeEl = document.getElementById('boardSize');
+  const mineCountEl = document.getElementById('mineCount');
+  const betAmountEl = document.getElementById('betAmount');
+  const startBtn = document.getElementById('startBtn');
+  const cashoutBtn = document.getElementById('cashoutBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const add100Btn = document.getElementById('add100');
+
+  const safeClicksEl = document.getElementById('safeClicks');
+  const nextProbEl = document.getElementById('nextProb');
+  const cashoutValueEl = document.getElementById('cashoutValue');
+  const balanceText = document.getElementById('balanceText');
+  const logEl = document.getElementById('log');
+
+  // ------- 工具函数 -------
+  const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
+
+  // 组合数 C(n,k) 使用乘法形式避免溢出/精度损失（n<=64 安全）
+  function comb(n,k){
+    if(k<0||k>n) return 0;
+    if(k===0||k===n) return 1;
+    k = Math.min(k, n-k);
+    let num = 1, den = 1;
+    for(let i=1;i<=k;i++){
+      num *= (n - k + i);
+      den *= i;
+    }
+    return num/den;
+  }
+
+  // 公平赔率（生存 k 步并撤退）：mult = C(N,k)/C(N−M,k)；抽水 3%
+  function fairMultiplier(N,M,k){
+    if(k===0) return 1; // 未点击撤退=返还本金（但我们 UI 不允许）
+    const top = comb(N, k);
+    const bottom = comb(N - M, k);
+    if(bottom<=0) return 0;
+    return top / bottom;
+  }
+
+  function formatMoney(x){ return (+x).toFixed(2); }
+
+  function log(msg){
+    const p = document.createElement('p');
+    p.textContent = msg;
+    logEl.prepend(p);
+    // 保持最多 60 行
+    while(logEl.children.length>60){ logEl.removeChild(logEl.lastChild); }
+  }
+
+  function updateHUD(){
+    const k = revealed.size;
+    safeClicksEl.textContent = k;
+
+    const total = N*N;
+    const opened = revealed.size; // 只统计安全格；雷未点开
+    const remainCells = total - opened - (exploded?1:0); // 若已爆炸，这个值无意义
+    const remainSafe = (total - M) - opened;
+
+    if(gameActive && !exploded){
+      const nextP = remainCells>0 ? remainSafe / remainCells : 0;
+      nextProbEl.textContent = (nextP*100).toFixed(2) + '%';
+      const mult = fairMultiplier(total, M, k);
+      const cash = k>0 ? bet * 0.97 * mult : 0;
+      cashoutValueEl.textContent = k>0 ? formatMoney(cash) : '—';
+      cashoutBtn.disabled = (k===0);
+    }else{
+      nextProbEl.textContent = '—';
+      cashoutValueEl.textContent = '—';
+      cashoutBtn.disabled = true;
+    }
+
+    balanceText.textContent = formatMoney(balance);
+  }
+
+  function buildGrid(){
+    gridEl.innerHTML = '';
+    gridEl.style.gridTemplateColumns = `repeat(${N}, minmax(40px, 52px))`;
+    gridEl.style.minHeight = (N<8?380:420)+'px';
+
+    for(let i=0;i<N*N;i++){
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.idx = i;
+      cell.addEventListener('click', onCellClick, {once:false});
+      gridEl.appendChild(cell);
+    }
+  }
+
+  function placeMines(){
+    mines.clear();
+    const total = N*N;
+    // 随机放置 M 个不同索引
+    while(mines.size < M){
+      mines.add(Math.floor(Math.random()*total));
+    }
+  }
+
+  function neighbors(idx){
+    const x = idx % N, y = Math.floor(idx/N);
+    const res=[];
+    for(let dy=-1;dy<=1;dy++){
+      for(let dx=-1;dx<=1;dx++){
+        if(dx===0 && dy===0) continue;
+        const nx=x+dx, ny=y+dy;
+        if(nx>=0 && nx<N && ny>=0 && ny<N){
+          res.push(ny*N + nx);
+        }
+      }
+    }
+    return res;
+  }
+
+  function countAdjMines(idx){
+    return neighbors(idx).reduce((acc,i)=>acc + (mines.has(i)?1:0), 0);
+  }
+
+  function reveal(idx){
+    if(revealed.has(idx)) return;
+    const el = gridEl.children[idx];
+    if(!el) return;
+    revealed.add(idx);
+    const n = countAdjMines(idx);
+    el.classList.add('revealed');
+    el.textContent = n>0 ? n : '';
+    el.style.color = n===0 ? '#93c5fd' : '#60a5fa';
+  }
+
+  function revealAllMines(){
+    mines.forEach(i=>{
+      const el = gridEl.children[i];
+      if(el){
+        el.classList.add('revealed','mine');
+        el.textContent = '💣';
+      }
+    });
+  }
+
+  function onCellClick(e){
+    if(!gameActive || exploded) return;
+    const idx = +e.currentTarget.dataset.idx;
+    // 已揭示的不处理
+    if(revealed.has(idx)) return;
+
+    if(mines.has(idx)){
+      // 触雷
+      exploded = true;
+      revealAllMines();
+      e.currentTarget.classList.add('mine');
+      e.currentTarget.textContent = '💥';
+      log(`💥 触发地雷！本局失去 ${formatMoney(bet)}。`);
+      gameActive = false;
+      updateHUD();
+      return;
+    }
+
+    // 安全
+    reveal(idx);
+    // 若空白可扩散，也可以做递归展开（这里保持谨慎：只单击揭示）
+    const n = countAdjMines(idx);
+    if(n===0){
+      // 可选择“轻度自动展开”——展开其周围非雷未点开的 0 邻雷格
+      neighbors(idx).forEach(j=>{
+        if(!mines.has(j) && !revealed.has(j) && countAdjMines(j)===0){
+          reveal(j);
+        }
+      });
+    }
+
+    // 胜利条件（全部安全格开完）
+    const totalSafe = N*N - M;
+    if(revealed.size >= totalSafe){
+      const k = revealed.size;
+      const mult = fairMultiplier(N*N, M, k);
+      const payout = bet * 0.97 * mult; // k=totalSafe 的情况
+      balance += payout;
+      log(`🏆 全部安全格已揭示！自动按撤退结算，获得 ${formatMoney(payout)}。`);
+      gameActive = false;
+      revealAllMines(); // 展示全图（其实没有未揭示安全格了）
+    }
+
+    updateHUD();
+  }
+
+  // ------- 交互 -------
+  function validateSettings(){
+    N = parseInt(boardSizeEl.value, 10);
+    const total = N*N;
+    let m = parseInt(mineCountEl.value, 10);
+    if(Number.isNaN(m)) m = 1;
+    m = clamp(m, 1, total-1);
+    mineCountEl.value = m;
+    M = m;
+
+    let b = parseFloat(betAmountEl.value);
+    if(Number.isNaN(b) || b<=0) b = 1;
+    b = Math.floor(b*100)/100;
+    betAmountEl.value = b;
+    bet = b;
+  }
+
+  function resetRound(keepBalance=true){
+    gameActive = false;
+    exploded = false;
+    mines.clear();
+    revealed.clear();
+    if(!keepBalance){ balance = 1000; }
+    buildGrid();
+    updateHUD();
+  }
+
+  startBtn.addEventListener('click', ()=>{
+    if(gameActive){
+      log('⚠️ 本局已在进行中。');
+      return;
+    }
+    validateSettings();
+    if(bet > balance){
+      log('⚠️ 余额不足，请先充值或降低下注金额。');
+      return;
+    }
+    balance -= bet;
+    resetRound(true); // 清空棋盘但保留余额变化
+    validateSettings(); // 确保 N/M 与输入一致
+    placeMines();
+    gameActive = true;
+    exploded = false;
+    log(`🎮 开始新局：${N}×${N}，地雷 ${M}，下注 ${formatMoney(bet)}（已扣款）。祝你好运！`);
+    updateHUD();
+  });
+
+  cashoutBtn.addEventListener('click', ()=>{
+    if(!gameActive || exploded) return;
+    const k = revealed.size;
+    if(k<=0){
+      log('ℹ️ 尚未点击安全格，无法撤退结算。');
+      return;
+    }
+    const mult = fairMultiplier(N*N, M, k);
+    const payout = bet * 0.97 * mult;
+    balance += payout;
+    log(`💰 撤退成功：安全点击 ${k} 格，赔率 ×${mult.toFixed(4)}，到手 ${formatMoney(payout)}。`);
+    gameActive = false;
+    revealAllMines();
+    updateHUD();
+  });
+
+  resetBtn.addEventListener('click', ()=>{
+    resetRound(true);
+    log('🔄 本局已重置（不影响余额）。');
+  });
+
+  add100Btn.addEventListener('click', ()=>{
+    balance += 100;
+    updateHUD();
+    log('💳 已充值 +100。');
+  });
+
+  boardSizeEl.addEventListener('change', ()=>{
+    validateSettings();
+    resetRound(true);
+    log(`🧩 棋盘切换为 ${N}×${N}，请设置地雷与下注后开始。`);
+  });
+
+  mineCountEl.addEventListener('change', ()=>{
+    validateSettings();
+    if(gameActive){
+      log('⚠️ 进行中的对局无法修改地雷数。请重开本局。');
+      mineCountEl.value = M;
+      return;
+    }
+    resetRound(true);
+    log(`🧨 地雷数量已设为 ${M}。`);
+  });
+
+  betAmountEl.addEventListener('change', ()=>{
+    validateSettings();
+    if(gameActive){
+      log('ℹ️ 本局下注已生效，修改将在下一局开始时生效。');
+    }else{
+      log(`💵 下注金额设为 ${formatMoney(bet)}。`);
+    }
+  });
+
+  // 初始
+  validateSettings();
+  resetRound(true);
+  log('📌 规则：点击安全格可继续，在未触雷时随时“撤退并结算”。赔率按组合数学计算，抽水 3%。');
+
+})();
+</script>
+</body>
+</html>
