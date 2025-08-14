@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
-<title>地雷</title>
+<title>找钻石｜可撤退版</title>
 <style>
   :root{
     --bg1:#0e1f3a; --bg2:#15365f; --panel:#102747; --panel2:#16385f;
@@ -91,6 +91,7 @@
     transition:transform .08s ease, background .25s, border-color .25s, box-shadow .2s, filter .2s;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.15), 0 6px 14px rgba(0,0,0,.25);
     position:relative;overflow:hidden;
+    font-size:22px; /* 让表情显得更清晰 */
   }
   .cell:hover{transform:translateY(-2px)}
   .cell:active{transform:translateY(0);filter:brightness(0.98)}
@@ -124,7 +125,7 @@
   <!-- 左侧：控制面板 -->
   <div class="card">
     <div class="panel">
-      <h1>地雷</h1>
+      <h1>找钻石｜可撤退</h1>
 
       <div class="row">
         <div>
@@ -274,11 +275,12 @@
     while(mines.size<M) mines.add(Math.floor(Math.random()*N*N));
   }
 
-  // 只 reveal + 动效（绿色）
+  // 安全格：显示💎，绿色+光晕
   function reveal(idx){
     if(revealed.has(idx)) return;
     revealed.add(idx);
     const el=gridEl.children[idx];
+    el.textContent='💎';
     el.classList.add('revealed','flash');
     el.addEventListener('animationend',()=>{ el.classList.remove('flash'); },{once:true});
   }
@@ -324,7 +326,6 @@
 
   // ------- 交互 -------
   function validateSettings(){
-    // 只读取，不自动覆盖用户输入
     N = parseInt(boardSizeEl.value,10) || 8;
 
     let m = parseInt(mineCountEl.value,10);
@@ -377,14 +378,14 @@
     updateHUD();
   });
 
-  // 切换棋盘大小：仅此处才自动填默认雷数
+  // 切换棋盘大小：写入默认雷数
   boardSizeEl.addEventListener('change', ()=>{
     if(gameActive){
       log('ℹ️ 本局进行中，棋盘大小变更将于重开后生效');
       return;
     }
     N = parseInt(boardSizeEl.value,10) || 8;
-    mineCountEl.value = defaultMines(N);   // 只在切换时写入默认值
+    mineCountEl.value = defaultMines(N);
     validateSettings();
     resetBoardUI(false);
     log(`🧩 棋盘切换为 ${N}×${N}（默认雷数 ${M}），可继续调整雷数或开始游戏`);
@@ -425,7 +426,6 @@
 
   // 初始
   (function init(){
-    // 初次根据默认棋盘填入默认雷数（仅一次）
     mineCountEl.value = defaultMines(N);
     validateSettings(); buildGrid(); updateHUD(); updateStartBtn(true);
   })();
