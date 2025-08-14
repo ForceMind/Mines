@@ -3,24 +3,13 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
-<title>找地雷</title>
+<title>找地雷｜可撤退版</title>
 <style>
   :root{
-    /* 调亮后的配色 */
-    --bg1:#0e1f3a;
-    --bg2:#15365f;
-    --panel:#102747;
-    --panel2:#16385f;
-    --accent:#22d3ee;   /* 青色更亮 */
-    --warn:#f87171;     /* 红更亮 */
-    --text:#f3f4f6;
-    --muted:#c7d2fe;
-    --btn:#1e3a8a;
-    --btn2:#25469e;
-    --grid:#0f2444;
-    --safe:#38bdf8;
-    --mine:#ef4444;
-    --gold:#fde68a;
+    --bg1:#0e1f3a; --bg2:#15365f; --panel:#102747; --panel2:#16385f;
+    --accent:#22d3ee; --warn:#f87171; --text:#f3f4f6; --muted:#c7d2fe;
+    --btn:#1e3a8a; --btn2:#25469e; --safe:#38bdf8; --mine:#ef4444; --gold:#fde68a;
+    --ink:#0f172a; --ink2:#1f2937; --border:rgba(255,255,255,.18);
   }
   *{box-sizing:border-box}
   body{
@@ -30,56 +19,79 @@
   }
   .app{width:100%;max-width:1100px;display:grid;grid-template-columns:340px 1fr;gap:16px}
   @media (max-width:900px){.app{grid-template-columns:1fr}}
-  .card{
-    background:linear-gradient(180deg,var(--panel),var(--panel2));
-    border:1px solid rgba(255,255,255,.12);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.35);
-  }
+  .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid rgba(255,255,255,.12);border-radius:16px}
   .panel{padding:16px 16px 12px}
   h1{margin:0 0 12px;font-size:20px;letter-spacing:.2px}
   .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0}
   label{font-size:12px;color:var(--gold)}
-  select,input{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);color:var(--text);padding:10px 12px;border-radius:10px;outline:none}
-  input[type="number"]{width:120px}
+
+  /* —— 输入控件（浅底深字，确保看得见） —— */
+  .select, .num, .money{
+    background:#ffffff;color:var(--ink);border:1px solid #cbd5e1;border-radius:10px;
+    padding:10px 12px;outline:none;
+  }
+  .select{appearance:none;position:relative;padding-right:34px;min-width:120px}
+  .selectWrap{position:relative;display:inline-block}
+  .selectWrap::after{
+    content:"▾";position:absolute;right:10px;top:50%;transform:translateY(-50%);
+    color:var(--ink2);pointer-events:none;font-size:12px;
+  }
+  .num{width:110px;text-align:center}
+  .money{width:120px}
+
+  .stepper{
+    display:inline-flex;align-items:center;border-radius:10px;overflow:hidden;border:1px solid #cbd5e1;background:#fff;
+  }
+  .stepper button{
+    background:#f1f5f9;border:none;padding:10px 12px;cursor:pointer;font-weight:700;color:var(--ink2);
+  }
+  .stepper button:active{transform:translateY(1px)}
+  .stepper input{border:none;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb}
+
   .btn{
-    background:var(--btn);border:1px solid rgba(255,255,255,.2);color:#fff;padding:10px 14px;border-radius:10px;cursor:pointer;transition:.15s;
-    user-select:none;box-shadow:0 4px 10px rgba(30,58,138,.35)
+    background:var(--btn);border:1px solid rgba(255,255,255,.2);color:#fff;padding:10px 14px;border-radius:10px;cursor:pointer;
+    transition:.15s;user-select:none;box-shadow:0 4px 10px rgba(30,58,138,.35)
   }
   .btn:hover{transform:translateY(-1px)}
   .btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
   .btn-primary{background:linear-gradient(180deg,#1fb6ff,#1d4ed8)}
-  .btn-danger{background:linear-gradient(180deg,#ef4444,#b91c1c)}
   .btn-gold{background:linear-gradient(180deg,#fde68a,#f59e0b);color:#1f2937}
+  .btn-icon{
+    width:36px;height:36px;border-radius:999px;border:1px solid rgba(255,255,255,.25);
+    background:linear-gradient(180deg,#fef3c7,#fde68a);color:#1f2937;font-weight:900;cursor:pointer;
+  }
+
   .balance{
     display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.04);
     border-top:1px solid rgba(255,255,255,.12);padding:12px 16px;border-radius:0 0 16px 16px
   }
   .balance strong{color:var(--gold);font-size:18px;text-shadow:0 0 8px rgba(253,230,138,.35)}
+
   .gridWrap{padding:16px}
   .grid{
-    display:grid;gap:8px;justify-content:center;align-content:center;padding:12px;background:linear-gradient(180deg,#0b1d3a,#0f2b55);
-    border-radius:12px;border:1px solid rgba(255,255,255,.12);min-height:420px
+    display:grid;gap:8px;justify-content:center;align-content:center;padding:12px;
+    background:linear-gradient(180deg,#0b1d3a,#0f2b55);border-radius:12px;border:1px solid rgba(255,255,255,.12);
+    min-height:420px
   }
   .cell{
     width:52px;height:52px;display:flex;align-items:center;justify-content:center;
     background:radial-gradient(100% 100% at 50% 0%, #2a4f8c 0%, #1a3766 100%);
     border:1px solid rgba(255,255,255,.18);border-radius:10px;cursor:pointer;user-select:none;
-    font-weight:800;font-size:16px;color:#e0f2fe;box-shadow:inset 0 1px 0 rgba(255,255,255,.25), 0 6px 14px rgba(0,0,0,.25);
     transition:transform .08s ease, background .2s, border-color .2s;
   }
   .cell:hover{transform:translateY(-2px)}
-  .cell.revealed{cursor:default;background:#19406f;border-color:rgba(255,255,255,.3);color:#c7d2fe}
+  .cell.revealed{cursor:default;background:#19406f;border-color:rgba(255,255,255,.3)}
   .cell.mine{background:#7f1d1d;border-color:#fecaca;color:#fecaca}
+
   .stats{
     display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 16px;border-top:1px solid rgba(255,255,255,.12);
     background:rgba(255,255,255,.04);border-radius:0 0 16px 16px
   }
-  .statBox{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:10px}
   .statLabel{font-size:12px;color:#bbf7d0}
   .statValue{font-size:18px;margin-top:6px}
-  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+
   .log{padding:10px 16px;border-top:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);max-height:160px;overflow:auto;border-radius:0 0 16px 16px}
   .log p{margin:6px 0;color:#e5e7eb;font-size:13px}
-  .tip{color:#d1fae5;font-size:12px;margin-top:4px}
 </style>
 </head>
 <body>
@@ -88,56 +100,68 @@
   <div class="card">
     <div class="panel">
       <h1>找地雷｜可撤退</h1>
+
       <div class="row">
         <div>
           <label>棋盘大小</label><br>
-          <select id="boardSize">
-            <option value="4">4 × 4</option>
-            <option value="5">5 × 5</option>
-            <option value="6">6 × 6</option>
-            <option value="8" selected>8 × 8</option>
-          </select>
+          <span class="selectWrap">
+            <select id="boardSize" class="select">
+              <option value="4">4 × 4</option>
+              <option value="5">5 × 5</option>
+              <option value="6">6 × 6</option>
+              <option value="8" selected>8 × 8</option>
+            </select>
+          </span>
         </div>
+
         <div>
           <label>地雷数量</label><br>
-          <input id="mineCount" type="number" value="10" min="1" step="1">
+          <div class="stepper">
+            <button id="mineMinus" type="button">−</button>
+            <input id="mineCount" class="num" type="number" value="10" min="1" step="1">
+            <button id="minePlus" type="button">+</button>
+          </div>
         </div>
+
         <div>
           <label>下注金额</label><br>
-          <input id="betAmount" type="number" value="10" min="1" step="1">
+          <input id="betAmount" class="money" type="number" value="10" min="1" step="1">
         </div>
       </div>
-      <div class="toolbar">
-        <button id="startBtn" class="btn btn-primary">开始游戏（扣款）</button>
+
+      <div class="row">
+        <button id="startResetBtn" class="btn btn-primary">开始游戏</button>
         <button id="cashoutBtn" class="btn btn-gold" disabled>撤退并结算</button>
-        <button id="resetBtn" class="btn">本局重开</button>
       </div>
-      <div class="tip">
-        说明：撤退奖金 = <b>下注金额 × 0.97 ÷ 当前“下一格安全概率”</b>。  
-        （下一格安全概率 = 仍未打开安全格数 ÷ 仍未打开总格子数）
+
+      <div class="row" style="margin-top:4px">
+        <small>撤退奖金 = 下注 × 0.97 ÷ 当前“下一格安全概率”。</small>
       </div>
     </div>
+
     <div class="stats">
-      <div class="statBox">
-        <div class="statLabel">已安全点击 (k)</div>
+      <div>
+        <div class="statLabel">已安全点击</div>
         <div class="statValue" id="safeClicks">0</div>
       </div>
-      <div class="statBox">
+      <div>
         <div class="statLabel">下一格安全概率</div>
         <div class="statValue" id="nextProb">—</div>
       </div>
-      <div class="statBox">
-        <div class="statLabel">当前可撤退奖金</div>
+      <div>
+        <div class="statLabel">可撤退奖金</div>
         <div class="statValue" id="cashoutValue">—</div>
       </div>
     </div>
+
     <div class="balance">
       <div>余额</div>
-      <div>
+      <div style="display:flex;align-items:center;gap:8px">
         <strong id="balanceText">1000.00</strong>
-        <button id="add100" class="btn" style="margin-left:8px;">+100</button>
+        <button id="add100" class="btn-icon" title="+100">+</button>
       </div>
     </div>
+
     <div class="log" id="log"></div>
   </div>
 
@@ -150,156 +174,117 @@
 <script>
 (function(){
   // ------- 状态 -------
-  let N = 8, M = 10;                    // N*N 总格子；M 地雷数
-  let mines = new Set();                 // 地雷位置集合（索引）
-  let revealed = new Set();              // 已揭示安全格（索引）
-  let gameActive = false;                // 是否进行中
-  let exploded = false;                  // 是否已触雷
-  let bet = 10;                          // 本局下注
-  let balance = 1000;                    // 余额
-  let gridEl = document.getElementById('grid');
+  let N=8, M=10;
+  let mines=new Set(), revealed=new Set();
+  let gameActive=false, exploded=false;
+  let bet=10, balance=1000;
 
-  const boardSizeEl = document.getElementById('boardSize');
-  const mineCountEl = document.getElementById('mineCount');
-  const betAmountEl = document.getElementById('betAmount');
-  const startBtn = document.getElementById('startBtn');
-  const cashoutBtn = document.getElementById('cashoutBtn');
-  const resetBtn = document.getElementById('resetBtn');
-  const add100Btn = document.getElementById('add100');
+  // ------- DOM -------
+  const gridEl=document.getElementById('grid');
+  const boardSizeEl=document.getElementById('boardSize');
+  const mineCountEl=document.getElementById('mineCount');
+  const mineMinusBtn=document.getElementById('mineMinus');
+  const minePlusBtn=document.getElementById('minePlus');
+  const betAmountEl=document.getElementById('betAmount');
+  const startResetBtn=document.getElementById('startResetBtn');
+  const cashoutBtn=document.getElementById('cashoutBtn');
+  const safeClicksEl=document.getElementById('safeClicks');
+  const nextProbEl=document.getElementById('nextProb');
+  const cashoutValueEl=document.getElementById('cashoutValue');
+  const balanceText=document.getElementById('balanceText');
+  const add100Btn=document.getElementById('add100');
+  const logEl=document.getElementById('log');
 
-  const safeClicksEl = document.getElementById('safeClicks');
-  const nextProbEl = document.getElementById('nextProb');
-  const cashoutValueEl = document.getElementById('cashoutValue');
-  const balanceText = document.getElementById('balanceText');
-  const logEl = document.getElementById('log');
-
-  // ------- 工具函数 -------
-  const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
-  const formatMoney = (x)=> (+x).toFixed(2);
-  const log = (msg)=>{ const p=document.createElement('p'); p.textContent=msg; logEl.prepend(p); while(logEl.children.length>60) logEl.removeChild(logEl.lastChild); };
+  // ------- 工具 -------
+  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+  const formatMoney=x=>(+x).toFixed(2);
+  const log=msg=>{const p=document.createElement('p');p.textContent=msg;logEl.prepend(p);while(logEl.children.length>60)logEl.removeChild(logEl.lastChild);};
 
   function updateHUD(){
-    const total = N*N;
-    const opened = revealed.size; // 只统计安全格
-    const remainCells = total - opened;             // 仍未打开的总格子（含雷与未开的安全格）
-    const remainSafe  = (total - M) - opened;       // 仍未打开的安全格
+    const total=N*N, opened=revealed.size;
+    const remainCells=total-opened, remainSafe=(total-M)-opened;
+
     if(gameActive && !exploded){
-      const nextP = remainCells>0 ? remainSafe/remainCells : 0;
-      nextProbEl.textContent = (nextP*100).toFixed(2) + '%';
-      const k = revealed.size;
-      if(k>0 && nextP>0){
-        const cash = bet * 0.97 / nextP;            // 新公式：bet / p_safe * 0.97
-        cashoutValueEl.textContent = formatMoney(cash);
-        cashoutBtn.disabled = false;
+      const nextP=remainCells>0?remainSafe/remainCells:0;
+      nextProbEl.textContent = (nextP*100).toFixed(2)+'%';
+      if(opened>0 && nextP>0){
+        cashoutValueEl.textContent = formatMoney(bet*0.97/nextP);
+        cashoutBtn.disabled=false;
       }else{
-        cashoutValueEl.textContent = '—';
-        cashoutBtn.disabled = true;
+        cashoutValueEl.textContent='—';
+        cashoutBtn.disabled=true;
       }
     }else{
-      nextProbEl.textContent = '—';
-      cashoutValueEl.textContent = '—';
-      cashoutBtn.disabled = true;
+      nextProbEl.textContent='—';
+      cashoutValueEl.textContent='—';
+      cashoutBtn.disabled=true;
     }
-    balanceText.textContent = formatMoney(balance);
+
     safeClicksEl.textContent = revealed.size;
+    balanceText.textContent = formatMoney(balance);
+
+    // 同步地雷数输入的合法区间
+    mineCountEl.min = 1;
+    mineCountEl.max = Math.max(1, N*N - 1);
   }
 
   function buildGrid(){
-    gridEl.innerHTML = '';
-    gridEl.style.gridTemplateColumns = `repeat(${N}, minmax(40px, 52px))`;
-    gridEl.style.minHeight = (N<8?380:420)+'px';
+    gridEl.innerHTML='';
+    gridEl.style.gridTemplateColumns=`repeat(${N},52px)`;
     for(let i=0;i<N*N;i++){
-      const cell = document.createElement('div');
-      cell.className = 'cell';
-      cell.dataset.idx = i;
-      cell.addEventListener('click', onCellClick, {once:false});
-      gridEl.appendChild(cell);
+      const c=document.createElement('div');
+      c.className='cell';c.dataset.idx=i;
+      c.addEventListener('click',onCellClick);
+      gridEl.appendChild(c);
     }
   }
 
   function placeMines(){
     mines.clear();
-    const total = N*N;
-    while(mines.size < M){
-      mines.add(Math.floor(Math.random()*total));
-    }
+    while(mines.size<M) mines.add(Math.floor(Math.random()*N*N));
   }
 
-  function neighbors(idx){
-    const x = idx % N, y = Math.floor(idx/N);
-    const res=[];
-    for(let dy=-1;dy<=1;dy++){
-      for(let dx=-1;dx<=1;dx++){
-        if(dx===0 && dy===0) continue;
-        const nx=x+dx, ny=y+dy;
-        if(nx>=0 && nx<N && ny>=0 && ny<N){ res.push(ny*N + nx); }
-      }
-    }
-    return res;
-  }
-
-  function countAdjMines(idx){
-    return neighbors(idx).reduce((acc,i)=>acc + (mines.has(i)?1:0), 0);
-  }
-
+  // 不显示数字：只做 reveal 状态
   function reveal(idx){
     if(revealed.has(idx)) return;
-    const el = gridEl.children[idx];
-    if(!el) return;
     revealed.add(idx);
-    const n = countAdjMines(idx);
-    el.classList.add('revealed');
-    el.textContent = n>0 ? n : '';
-    el.style.color = n===0 ? '#e0f2fe' : '#bbf7d0';
+    gridEl.children[idx].classList.add('revealed');
   }
-
   function revealAllMines(){
     mines.forEach(i=>{
-      const el = gridEl.children[i];
-      if(el){
-        el.classList.add('revealed','mine');
-        el.textContent = '💣';
-      }
+      const el=gridEl.children[i];
+      el.classList.add('revealed','mine');
+      el.textContent='💣';
     });
   }
 
   function onCellClick(e){
     if(!gameActive || exploded) return;
-    const idx = +e.currentTarget.dataset.idx;
+    const idx=+e.currentTarget.dataset.idx;
     if(revealed.has(idx)) return;
 
-    // 计算“本次点击前”的当盘安全概率（用于胜利自动结算）
-    const total = N*N;
-    const openedBefore = revealed.size;
-    const remainCellsBefore = total - openedBefore;
-    const remainSafeBefore  = (total - M) - openedBefore;
-    const pBefore = remainCellsBefore>0 ? (remainSafeBefore/remainCellsBefore) : 0;
-    const payoutIfWinThisClick = (openedBefore>=0 && pBefore>0) ? bet * 0.97 / pBefore : 0;
+    // 点击前的“当盘概率”（用于全清结算）
+    const total=N*N, opened=revealed.size;
+    const remainCells=total-opened, remainSafe=(total-M)-opened;
+    const pBefore = remainCells>0 ? (remainSafe/remainCells) : 0;
+    const payoutIfWin = pBefore>0 ? bet*0.97/pBefore : 0;
 
     if(mines.has(idx)){
-      // 触雷
-      exploded = true;
-      revealAllMines();
-      e.currentTarget.classList.add('mine');
-      e.currentTarget.textContent = '💥';
-      log(`💥 触发地雷！本局失去 ${formatMoney(bet)}。`);
-      gameActive = false;
-      updateHUD();
-      return;
+      exploded=true; revealAllMines();
+      e.currentTarget.classList.add('mine'); e.currentTarget.textContent='💥';
+      log(`💥 触雷，损失 ${formatMoney(bet)}`);
+      gameActive=false; startResetBtn.textContent='开始游戏';
+      updateHUD(); return;
     }
 
-    // 安全
     reveal(idx);
 
-    // 胜利条件（全部安全格开完）
-    const totalSafe = total - M;
-    if(revealed.size >= totalSafe){
-      balance += payoutIfWinThisClick; // 使用“本次点击前”的当盘概率结算
-      log(`🏆 全部安全格已揭示！自动结算到手 ${formatMoney(payoutIfWinThisClick)}（按最后一次点击前的当盘概率）。`);
-      gameActive = false;
-      revealAllMines();
-      updateHUD();
-      return;
+    // 胜利（所有安全格都开完）
+    if(revealed.size >= total - M){
+      balance += payoutIfWin;
+      log(`🏆 全清，获得 ${formatMoney(payoutIfWin)}（按最后一次点击前的当盘概率）`);
+      gameActive=false; revealAllMines(); startResetBtn.textContent='开始游戏';
+      updateHUD(); return;
     }
 
     updateHUD();
@@ -307,115 +292,111 @@
 
   // ------- 交互 -------
   function validateSettings(){
-    N = parseInt(boardSizeEl.value, 10);
-    const total = N*N;
-    let m = parseInt(mineCountEl.value, 10);
-    if(Number.isNaN(m)) m = 1;
-    m = clamp(m, 1, total-1);
-    mineCountEl.value = m;
-    M = m;
+    N = parseInt(boardSizeEl.value,10) || 8;
+    // 地雷数根据 N 进行 clamp
+    let m = parseInt(mineCountEl.value,10);
+    m = clamp(isNaN(m)?1:m, 1, N*N - 1);
+    M = m; mineCountEl.value = m;
 
     let b = parseFloat(betAmountEl.value);
-    if(Number.isNaN(b) || b<=0) b = 1;
-    b = Math.floor(b*100)/100;
-    betAmountEl.value = b;
-    bet = b;
+    if(isNaN(b)||b<=0) b=1;
+    bet = Math.floor(b*100)/100; betAmountEl.value=bet;
   }
 
-  function resetRound(keepBalance=true){
-    gameActive = false;
-    exploded = false;
-    mines.clear();
-    revealed.clear();
-    if(!keepBalance){ balance = 1000; }
-    buildGrid();
-    updateHUD();
+  function resetBoardUI(keepMines=false){
+    if(!keepMines){ mines.clear(); }
+    revealed.clear(); exploded=false; gameActive=false;
+    buildGrid(); updateHUD();
   }
 
-  startBtn.addEventListener('click', ()=>{
+  startResetBtn.addEventListener('click', ()=>{
     if(gameActive){
-      log('⚠️ 本局已在进行中。');
+      // 重开
+      resetBoardUI(false);
+      startResetBtn.textContent='开始游戏';
+      log('🔄 已重置本局（不影响余额）');
       return;
     }
+    // 开始
     validateSettings();
-    if(bet > balance){
-      log('⚠️ 余额不足，请先充值或降低下注金额。');
-      return;
-    }
+    if(bet > balance){ log('⚠️ 余额不足，请先加钱或降低下注'); return; }
     balance -= bet;
-    resetRound(true);
+    resetBoardUI(false);
     validateSettings();
     placeMines();
-    gameActive = true;
-    exploded = false;
-    log(`🎮 开始新局：${N}×${N}，地雷 ${M}，下注 ${formatMoney(bet)}（已扣款）。祝你好运！`);
+    gameActive=true;
+    startResetBtn.textContent='重开游戏';
+    log(`🎮 新局：${N}×${N}，雷 ${M}，下注 ${formatMoney(bet)}（已扣款）`);
     updateHUD();
   });
 
   cashoutBtn.addEventListener('click', ()=>{
     if(!gameActive || exploded) return;
-    const total = N*N;
-    const opened = revealed.size;
-    const remainCells = total - opened;
-    const remainSafe  = (total - M) - opened;
-    if(opened<=0){
-      log('ℹ️ 尚未点击安全格，无法撤退结算。');
-      return;
-    }
-    if(remainSafe<=0 || remainCells<=0){
-      log('ℹ️ 当前无法按当盘概率结算。');
-      return;
-    }
-    const nextP = remainSafe/remainCells;
-    const payout = bet * 0.97 / nextP;
+    const total=N*N, opened=revealed.size;
+    if(opened<=0){ log('ℹ️ 尚未点击安全格，无法撤退结算'); return; }
+    const remainCells=total-opened, remainSafe=(total-M)-opened;
+    if(remainCells<=0 || remainSafe<=0){ log('ℹ️ 当前无法按当盘概率结算'); return; }
+    const p = remainSafe/remainCells;
+    const payout = bet*0.97/p;
     balance += payout;
-    log(`💰 撤退成功：当前下一格安全概率 ${(nextP*100).toFixed(2)}%，到手 ${formatMoney(payout)}。`);
-    gameActive = false;
-    revealAllMines();
+    log(`💰 撤退获得 ${formatMoney(payout)}（当前安全概率 ${(p*100).toFixed(2)}%）`);
+    gameActive=false; revealAllMines(); startResetBtn.textContent='开始游戏';
     updateHUD();
   });
 
-  resetBtn.addEventListener('click', ()=>{
-    resetRound(true);
-    log('🔄 本局已重置（不影响余额）。');
-  });
-
-  add100Btn.addEventListener('click', ()=>{
-    balance += 100;
-    updateHUD();
-    log('💳 已充值 +100。');
-  });
-
+  // 棋盘大小变化
   boardSizeEl.addEventListener('change', ()=>{
-    validateSettings();
-    resetRound(true);
-    log(`🧩 棋盘切换为 ${N}×${N}，请设置地雷与下注后开始。`);
+    validateSettings(); resetBoardUI(false);
+    log(`🧩 棋盘切换为 ${N}×${N}，请设置雷数与下注后开始`);
   });
 
+  // 地雷数：输入框直接改
   mineCountEl.addEventListener('change', ()=>{
-    validateSettings();
     if(gameActive){
-      log('⚠️ 进行中的对局无法修改地雷数。请重开本局。');
-      mineCountEl.value = M;
+      mineCountEl.value = M; // 进行中不允许改
+      log('⚠️ 本局进行中，无法修改地雷数');
       return;
     }
-    resetRound(true);
-    log(`🧨 地雷数量已设为 ${M}。`);
+    validateSettings();
+    resetBoardUI(false);
+    log(`🧨 地雷数量设为 ${M}`);
   });
 
+  // 地雷数：减按钮
+  mineMinusBtn.addEventListener('click', ()=>{
+    if(gameActive){ log('⚠️ 本局进行中，无法修改地雷数'); return; }
+    validateSettings();
+    mineCountEl.value = clamp(parseInt(mineCountEl.value,10)-1, 1, N*N-1);
+    validateSettings(); resetBoardUI(false);
+    log(`🧨 地雷数量设为 ${M}`);
+  });
+
+  // 地雷数：加按钮
+  minePlusBtn.addEventListener('click', ()=>{
+    if(gameActive){ log('⚠️ 本局进行中，无法修改地雷数'); return; }
+    validateSettings();
+    mineCountEl.value = clamp(parseInt(mineCountEl.value,10)+1, 1, N*N-1);
+    validateSettings(); resetBoardUI(false);
+    log(`🧨 地雷数量设为 ${M}`);
+  });
+
+  // 下注金额
   betAmountEl.addEventListener('change', ()=>{
     validateSettings();
     if(gameActive){
-      log('ℹ️ 本局下注已生效，修改将在下一局开始时生效。');
+      log('ℹ️ 本局下注已锁定，修改将在下一局生效');
     }else{
-      log(`💵 下注金额设为 ${formatMoney(bet)}。`);
+      log(`💵 下注金额设为 ${formatMoney(bet)}`);
     }
   });
 
+  // 余额 +100
+  add100Btn.addEventListener('click', ()=>{
+    balance += 100; updateHUD(); log('💳 余额 +100');
+  });
+
   // 初始
-  validateSettings();
-  resetRound(true);
-  log('📌 规则：点击安全格可继续，在未触雷时随时撤退。撤退奖金 = 下注 × 0.97 ÷ 当前“下一格安全概率”。');
+  validateSettings(); buildGrid(); updateHUD();
 })();
 </script>
 </body>
