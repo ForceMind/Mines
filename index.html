@@ -1,434 +1,685 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
-<title>找钻石｜可撤退版</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Mines</title>
 <style>
-  :root{
-    --bg1:#0e1f3a; --bg2:#15365f; --panel:#102747; --panel2:#16385f;
-    --accent:#22d3ee; --warn:#f87171; --text:#f3f4f6; --muted:#c7d2fe;
-    --btn:#1e3a8a; --btn2:#25469e; --safe:#22c55e; --mine:#ef4444; --gold:#fde68a;
-    --ink:#0f172a; --ink2:#1f2937;
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0;background:linear-gradient(180deg,var(--bg1),var(--bg2) 50%,var(--bg1));
-    color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;
-    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;
-  }
-  .app{width:100%;max-width:1100px;display:grid;grid-template-columns:340px 1fr;gap:16px}
-  @media (max-width:900px){.app{grid-template-columns:1fr}}
-  .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid rgba(255,255,255,.12);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
-  .panel{padding:16px 16px 12px}
-  h1{margin:0 0 12px;font-size:20px;letter-spacing:.2px}
-  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0}
-  label{font-size:12px;color:var(--gold)}
-
-  /* 输入控件（浅底深字） */
-  .select, .num, .money{
-    background:#ffffff;color:var(--ink);border:1px solid #cbd5e1;border-radius:10px;
-    padding:10px 12px;outline:none;
-  }
-  .select{appearance:none;position:relative;padding-right:34px;min-width:120px}
-  .selectWrap{position:relative;display:inline-block}
-  .selectWrap::after{
-    content:"▾";position:absolute;right:10px;top:50%;transform:translateY(-50%);
-    color:var(--ink2);pointer-events:none;font-size:12px;
-  }
-  .num{width:110px;text-align:center}
-  .money{width:120px}
-
-  .stepper{
-    display:inline-flex;align-items:center;border-radius:10px;overflow:hidden;border:1px solid #cbd5e1;background:#fff;
-  }
-  .stepper button{
-    background:#f1f5f9;border:none;padding:10px 12px;cursor:pointer;font-weight:700;color:var(--ink2);
-    transition:transform .06s ease, filter .06s ease;
-  }
-  .stepper button:hover{filter:brightness(0.95)}
-  .stepper button:active{transform:translateY(1px)}
-  .stepper input{border:none;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb}
-
-  /* 按钮（开始=蓝，重开=红） */
-  .btn{
-    border:1px solid rgba(255,255,255,.2);color:#fff;padding:10px 14px;border-radius:10px;cursor:pointer;
-    transition:transform .12s ease, box-shadow .12s ease, filter .12s ease;
-    user-select:none;box-shadow:0 6px 14px rgba(0,0,0,.25)
-  }
-  .btn:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(0,0,0,.35)}
-  .btn:active{transform:translateY(0);filter:brightness(0.95)}
-  .btn:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:none}
-  .btn-start{background:linear-gradient(180deg,#1fb6ff,#1d4ed8)}
-  .btn-reset{background:linear-gradient(180deg,#ef4444,#b91c1c)}
-  .btn-gold{background:linear-gradient(180deg,#fde68a,#f59e0b);color:#1f2937}
-  .btn-icon{
-    width:36px;height:36px;border-radius:999px;border:1px solid rgba(255,255,255,.25);
-    background:linear-gradient(180deg,#fef3c7,#fde68a);color:#1f2937;font-weight:900;cursor:pointer;
-    transition:transform .12s ease, box-shadow .12s ease, filter .12s ease;
-  }
-  .btn-icon:hover{transform:translateY(-2px);box-shadow:0 6px 14px rgba(0,0,0,.25)}
-  .btn-icon:active{transform:translateY(0);filter:brightness(0.95)}
-
-  .balance{
-    display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.04);
-    border-top:1px solid rgba(255,255,255,.12);padding:12px 16px;border-radius:0 0 16px 16px
-  }
-  .balance strong{color:var(--gold);font-size:18px;text-shadow:0 0 8px rgba(253,230,138,.35)}
-
-  .gridWrap{padding:16px}
-  .grid{
-    display:grid;gap:8px;justify-content:center;align-content:center;padding:12px;
-    background:linear-gradient(180deg,#0b1d3a,#0f2b55);border-radius:12px;border:1px solid rgba(255,255,255,.12);
-    min-height:420px
+  :root {
+    --bg: #0b2a4a;
+    --panel: #163a63;
+    --panel-2: #1e4b78;
+    --line: rgba(190,225,255,.18);
+    --text: #f7fafc;
+    --muted: #9aa8bb;
+    --accent: #37c6a1;
+    --accent-2: #62e0bd;
+    --gold: #ffd45f;
+    --cell: #24527d;
+    --cell-hover: #326da3;
+    --safe: #18b97c;
+    --mine: #8f2d36;
+    --ink: #111827;
   }
 
-  /* 棋盘格 + 动效 */
-  .cell{
-    width:52px;height:52px;display:flex;align-items:center;justify-content:center;
-    background:radial-gradient(100% 100% at 50% 0%, #2a4f8c 0%, #1a3766 100%);
-    border:1px solid rgba(255,255,255,.18);border-radius:10px;cursor:pointer;user-select:none;
-    transition:transform .08s ease, background .25s, border-color .25s, box-shadow .2s, filter .2s;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.15), 0 6px 14px rgba(0,0,0,.25);
-    position:relative;overflow:hidden;
-    font-size:22px; /* 让表情显得更清晰 */
-  }
-  .cell:hover{transform:translateY(-2px)}
-  .cell:active{transform:translateY(0);filter:brightness(0.98)}
-  /* 安全格被点击后 → 绿色，并带光晕 */
-  .cell.revealed{cursor:default;background:linear-gradient(180deg,#1b5e37,#16884e);border-color:rgba(34,197,94,.7)}
-  .cell.mine{background:#7f1d1d;border-color:#fecaca;color:#fecaca}
-  .cell.flash::after{
-    content:"";position:absolute;inset:-10%;border-radius:12px;
-    background:radial-gradient(circle, rgba(34,197,94,.55) 0%, rgba(34,197,94,0) 60%);
-    animation:flashGlow 1s ease-out forwards; pointer-events:none;
-  }
-  @keyframes flashGlow{
-    0%{opacity:0;transform:scale(.8)}
-    20%{opacity:1;transform:scale(1)}
-    100%{opacity:0;transform:scale(1.3)}
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(circle at 18% 8%, rgba(57,154,255,.34), transparent 34%),
+      radial-gradient(circle at 82% 20%, rgba(55,198,255,.2), transparent 30%),
+      linear-gradient(135deg, #09233f, #123b67 52%, #0b2f54);
+    color: var(--text);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    padding: 18px;
   }
 
-  .stats{
-    display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 16px;border-top:1px solid rgba(255,255,255,.12);
-    background:rgba(255,255,255,.04);border-radius:0 0 16px 16px
+  .shell {
+    width: min(96vmin, 760px);
+    height: min(96vmin, 760px);
+    aspect-ratio: 1 / 1;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(20,54,91,.96);
+    box-shadow: 0 28px 70px rgba(0,18,38,.38);
   }
-  .statLabel{font-size:12px;color:#bbf7d0}
-  .statValue{font-size:18px;margin-top:6px}
 
-  .log{padding:10px 16px;border-top:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);max-height:160px;overflow:auto;border-radius:0 0 16px 16px}
-  .log p{margin:6px 0;color:#e5e7eb;font-size:13px}
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 18px;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(117,181,255,.08);
+  }
+
+  h1 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    line-height: 1.1;
+    font-weight: 760;
+  }
+
+  .subtle {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .balance {
+    text-align: right;
+    min-width: 150px;
+  }
+
+  .header-stats {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    max-width: 320px;
+  }
+
+  .stat {
+    min-height: 42px;
+    padding: 7px 9px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: rgba(143,198,255,.09);
+  }
+
+  .stat span {
+    display: block;
+    color: var(--muted);
+    font-size: 10px;
+  }
+
+  .stat strong {
+    display: block;
+    margin-top: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 14px;
+  }
+
+  .balance strong {
+    display: block;
+    margin-top: 2px;
+    font-size: 22px;
+    color: var(--gold);
+  }
+
+  .board-area {
+    min-width: 0;
+    min-height: 0;
+    display: grid;
+    place-items: center;
+    padding: 12px 18px;
+  }
+
+  .board {
+    width: min(100%, 410px);
+    aspect-ratio: 1 / 1;
+    display: grid;
+    gap: 6px;
+    padding: 8px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: linear-gradient(180deg, #12375e, #0d2a49);
+  }
+
+  button {
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: #06130f;
+    background: linear-gradient(180deg, var(--accent-2), var(--accent));
+    font: inherit;
+    font-weight: 760;
+    cursor: pointer;
+    transition: transform .12s ease, filter .12s ease, opacity .12s ease;
+  }
+
+  button:hover { transform: translateY(-1px); }
+  button:active { transform: translateY(0); filter: brightness(.96); }
+  button:disabled { cursor: not-allowed; opacity: .55; transform: none; }
+
+  .cell {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 6px;
+    background: linear-gradient(180deg, var(--cell-hover), var(--cell));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 5px 12px rgba(0,25,55,.22);
+    color: var(--text);
+    font-size: clamp(18px, 4.4vmin, 30px);
+    line-height: 1;
+    user-select: none;
+  }
+
+  .cell.open {
+    cursor: default;
+    background: radial-gradient(circle at 50% 35%, #9fffea 0%, #38e8b9 38%, var(--safe) 100%);
+    border-color: rgba(183,255,238,.9);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.42), 0 0 22px rgba(77,255,216,.62);
+    text-shadow: 0 0 10px rgba(255,255,255,.95), 0 0 18px rgba(65,242,255,.9);
+  }
+
+  .cell.mine {
+    cursor: default;
+    background: linear-gradient(180deg, #b33b42, var(--mine));
+    border-color: rgba(255,255,255,.32);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 0 16px rgba(239,87,87,.22);
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 172px 154px;
+    gap: 10px;
+    align-items: end;
+    padding: 10px 18px 12px;
+    border-top: 1px solid var(--line);
+    background: rgba(8,39,72,.54);
+  }
+
+  label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 650;
+  }
+
+  input,
+  select {
+    width: 100%;
+    height: 38px;
+    border: 1px solid rgba(255,255,255,.16);
+    border-radius: 6px;
+    padding: 0 10px;
+    outline: none;
+    background: #f7fafc;
+    color: var(--ink);
+    font: inherit;
+  }
+
+  .bet-stepper {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr) 36px;
+    gap: 6px;
+  }
+
+  .step-btn,
+  .bet-display {
+    height: 38px;
+    border-radius: 6px;
+  }
+
+  .step-btn {
+    color: var(--text);
+    border-color: rgba(255,255,255,.16);
+    background: var(--panel-2);
+    font-size: 18px;
+  }
+
+  .bet-display {
+    display: grid;
+    place-items: center;
+    min-width: 0;
+    padding: 0 8px;
+    border: 1px solid rgba(255,255,255,.16);
+    background: #f7fafc;
+    color: var(--ink);
+    font-size: 15px;
+    font-weight: 760;
+  }
+
+  .action {
+    width: 100%;
+    height: 38px;
+    white-space: nowrap;
+  }
+
+  footer {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    border-top: 1px solid var(--line);
+    background: rgba(8,39,72,.64);
+  }
+
+  .log {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: none;
+    place-items: center;
+    padding: 20px;
+    background: rgba(5, 22, 42, .66);
+  }
+
+  .modal.show { display: grid; }
+
+  .modal-panel {
+    width: min(340px, 100%);
+    padding: 22px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: linear-gradient(180deg, #1e4b78, #12375e);
+    box-shadow: 0 28px 70px rgba(0,0,0,.45);
+    text-align: center;
+  }
+
+  .modal-icon {
+    margin-bottom: 10px;
+    font-size: 42px;
+    line-height: 1;
+  }
+
+  .modal-title {
+    margin: 0;
+    font-size: 24px;
+    line-height: 1.15;
+  }
+
+  .modal-message {
+    margin: 8px 0 18px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .modal-button {
+    width: 100%;
+    height: 40px;
+  }
+
+  @media (max-width: 720px) {
+    body { padding: 10px; }
+    .shell {
+      width: min(96vmin, 620px);
+      height: min(96vmin, 620px);
+    }
+    header {
+      align-items: start;
+      padding: 10px 14px;
+    }
+    .header-stats { display: none; }
+    .board-area { padding: 10px 12px; }
+    .board {
+      width: min(100%, 360px);
+      gap: 4px;
+      padding: 6px;
+    }
+    .controls {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      padding: 10px 12px;
+    }
+    .action-wrap { grid-column: 1 / -1; }
+  }
 </style>
 </head>
 <body>
-<div class="app">
-  <!-- 左侧：控制面板 -->
-  <div class="card">
-    <div class="panel">
-      <h1>找钻石｜可撤退</h1>
-
-      <div class="row">
-        <div>
-          <label>棋盘大小</label><br>
-          <span class="selectWrap">
-            <select id="boardSize" class="select">
-              <option value="4">4 × 4</option>
-              <option value="5">5 × 5</option>
-              <option value="6">6 × 6</option>
-              <option value="8" selected>8 × 8</option>
-            </select>
-          </span>
-        </div>
-
-        <div>
-          <label>地雷数量</label><br>
-          <div class="stepper">
-            <button id="mineMinus" type="button">−</button>
-            <input id="mineCount" class="num" type="number" value="12" min="1" step="1">
-            <button id="minePlus" type="button">+</button>
-          </div>
-        </div>
-
-        <div>
-          <label>下注金额</label><br>
-          <input id="betAmount" class="money" type="number" value="10" min="1" step="1">
-        </div>
+<div class="shell">
+  <header>
+    <div>
+      <h1>Mines</h1>
+      <p class="subtle">Live game</p>
+    </div>
+    <div class="header-stats">
+      <div class="stat">
+        <span>Safe</span>
+        <strong id="safeClicks">0</strong>
       </div>
-
-      <div class="row">
-        <button id="startResetBtn" class="btn btn-start">开始游戏</button>
-        <button id="cashoutBtn" class="btn btn-gold" disabled>撤退并结算</button>
+      <div class="stat">
+        <span>Next</span>
+        <strong id="nextSafe">--</strong>
+      </div>
+      <div class="stat">
+        <span>Cashout</span>
+        <strong id="cashoutValue">--</strong>
       </div>
     </div>
-
-    <div class="stats">
-      <div>
-        <div class="statLabel">已安全点击</div>
-        <div class="statValue" id="safeClicks">0</div>
-      </div>
-      <div>
-        <div class="statLabel">下一格安全概率</div>
-        <div class="statValue" id="nextProb">—</div>
-      </div>
-      <div>
-        <div class="statLabel">可撤退奖金</div>
-        <div class="statValue" id="cashoutValue">—</div>
-      </div>
-    </div>
-
     <div class="balance">
-      <div>余额</div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <strong id="balanceText">1000.00</strong>
-        <button id="add100" class="btn-icon" title="+100">+</button>
+      <p class="subtle">Coins</p>
+      <strong id="balance">1000.00</strong>
+    </div>
+  </header>
+
+  <section class="board-area">
+    <div id="board" class="board"></div>
+  </section>
+
+  <section class="controls">
+    <div class="field">
+      <label for="boardSize">Board</label>
+      <select id="boardSize">
+        <option value="4">4 x 4</option>
+        <option value="5" selected>5 x 5</option>
+        <option value="6">6 x 6</option>
+        <option value="8">8 x 8</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="mineCount">Mines</label>
+      <input id="mineCount" type="number" min="1" max="63" step="1" value="5">
+    </div>
+
+    <div class="field">
+      <label>Bet</label>
+      <div class="bet-stepper">
+        <button id="betMinus" class="step-btn" type="button" aria-label="Decrease bet">-</button>
+        <div id="betDisplay" class="bet-display">10</div>
+        <button id="betPlus" class="step-btn" type="button" aria-label="Increase bet">+</button>
       </div>
     </div>
 
-    <div class="log" id="log"></div>
-  </div>
+    <div class="action-wrap">
+      <button id="actionBtn" class="action">Start Round</button>
+    </div>
+  </section>
 
-  <!-- 右侧：棋盘 -->
-  <div class="card gridWrap">
-    <div id="grid" class="grid"></div>
+  <footer>
+    <div id="log" class="log">Ready.</div>
+  </footer>
+</div>
+
+<div id="resultModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-panel">
+    <div id="modalIcon" class="modal-icon">💎</div>
+    <h2 id="modalTitle" class="modal-title">Congratulations</h2>
+    <p id="modalMessage" class="modal-message">You won 0.00 coins.</p>
+    <button id="modalButton" class="modal-button" type="button">Continue</button>
   </div>
 </div>
 
 <script>
-(function(){
-  // ------- 状态 -------
-  let N=8, M=12; // 默认 8×8 → 12 雷
-  let mines=new Set(), revealed=new Set();
-  let gameActive=false, exploded=false;
-  let bet=10, balance=1000;
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const boardEl = $('board');
+  const boardSizeEl = $('boardSize');
+  const mineCountEl = $('mineCount');
+  const betMinusBtn = $('betMinus');
+  const betPlusBtn = $('betPlus');
+  const betDisplayEl = $('betDisplay');
+  const actionBtn = $('actionBtn');
+  const balanceEl = $('balance');
+  const safeClicksEl = $('safeClicks');
+  const nextSafeEl = $('nextSafe');
+  const cashoutValueEl = $('cashoutValue');
+  const logEl = $('log');
+  const resultModalEl = $('resultModal');
+  const modalIconEl = $('modalIcon');
+  const modalTitleEl = $('modalTitle');
+  const modalMessageEl = $('modalMessage');
+  const modalButtonEl = $('modalButton');
 
-  // ------- DOM -------
-  const gridEl=document.getElementById('grid');
-  const boardSizeEl=document.getElementById('boardSize');
-  const mineCountEl=document.getElementById('mineCount');
-  const mineMinusBtn=document.getElementById('mineMinus');
-  const minePlusBtn=document.getElementById('minePlus');
-  const betAmountEl=document.getElementById('betAmount');
-  const startResetBtn=document.getElementById('startResetBtn');
-  const cashoutBtn=document.getElementById('cashoutBtn');
-  const safeClicksEl=document.getElementById('safeClicks');
-  const nextProbEl=document.getElementById('nextProb');
-  const cashoutValueEl=document.getElementById('cashoutValue');
-  const balanceText=document.getElementById('balanceText');
-  const add100Btn=document.getElementById('add100');
-  const logEl=document.getElementById('log');
-
-  // ------- 工具 -------
-  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
-  const formatMoney=x=>(+x).toFixed(2);
-  const log=msg=>{const p=document.createElement('p');p.textContent=msg;logEl.prepend(p);while(logEl.children.length>60)logEl.removeChild(logEl.lastChild);};
-
-  function defaultMines(size){
-    const map={4:3, 5:5, 6:8, 8:12};
-    return map[size] ?? Math.max(1, Math.floor(size*size*0.18));
-  }
-  function updateStartBtn(isStart){
-    startResetBtn.textContent = isStart ? '开始游戏' : '重开游戏';
-    startResetBtn.classList.toggle('btn-start', isStart);
-    startResetBtn.classList.toggle('btn-reset', !isStart);
+  let currentGame = null;
+  let currentUser = null;
+  let betLevels = [1, 5, 10, 20, 50, 100];
+  let betIndex = 2;
+  let playerId = localStorage.getItem('minesPlayerId');
+  if (!playerId) {
+    playerId = `player-${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
+    localStorage.setItem('minesPlayerId', playerId);
   }
 
-  function updateHUD(){
-    const total=N*N, opened=revealed.size;
-    const remainCells=total-opened, remainSafe=(total-M)-opened;
+  const defaults = { 4: 3, 5: 5, 6: 8, 8: 12 };
+  const terminalStatuses = new Set(['lost', 'won', 'cashed_out', 'abandoned']);
 
-    if(gameActive && !exploded){
-      const nextP=remainCells>0?remainSafe/remainCells:0;
-      nextProbEl.textContent = (nextP*100).toFixed(2)+'%';
-      if(opened>0 && nextP>0){
-        cashoutValueEl.textContent = formatMoney(bet*0.97/nextP);
-        cashoutBtn.disabled=false;
-      }else{
-        cashoutValueEl.textContent='—';
-        cashoutBtn.disabled=true;
-      }
-    }else{
-      nextProbEl.textContent='—';
-      cashoutValueEl.textContent='—';
-      cashoutBtn.disabled=true;
+  function coins(value) {
+    return `${Number(value || 0).toFixed(2)}`;
+  }
+
+  function betMoney(value) {
+    const number = Number(value || 0);
+    return Number.isInteger(number) ? `${number}` : coins(number);
+  }
+
+  function percent(value) {
+    return `${(Number(value || 0) * 100).toFixed(2)}%`;
+  }
+
+  function setLog(message) {
+    logEl.textContent = message;
+  }
+
+  function currentBet() {
+    return betLevels[betIndex] || betLevels[0] || 1;
+  }
+
+  function syncBetDisplay() {
+    betDisplayEl.textContent = betMoney(currentBet());
+    betMinusBtn.disabled = currentGame?.status === 'active' || betIndex <= 0;
+    betPlusBtn.disabled = currentGame?.status === 'active' || betIndex >= betLevels.length - 1;
+  }
+
+  function applyBetLevels(levels) {
+    const previousBet = currentBet();
+    const normalized = Array.isArray(levels)
+      ? levels.map(Number).filter((value) => Number.isFinite(value) && value > 0).sort((a, b) => a - b)
+      : [];
+    betLevels = normalized.length ? normalized : [1, 5, 10, 20, 50, 100];
+    betIndex = betLevels.reduce((bestIndex, level, index) => (
+      Math.abs(level - previousBet) < Math.abs(betLevels[bestIndex] - previousBet) ? index : bestIndex
+    ), 0);
+    syncBetDisplay();
+  }
+
+  function showResultModal(type, amount = 0) {
+    if (type === 'loss') {
+      modalIconEl.textContent = '💣';
+      modalTitleEl.textContent = 'Round Lost';
+      modalMessageEl.textContent = 'You hit a mine.';
+    } else {
+      modalIconEl.textContent = '💎';
+      modalTitleEl.textContent = 'Congratulations';
+      modalMessageEl.textContent = `You won ${coins(amount)} coins.`;
     }
-
-    safeClicksEl.textContent = revealed.size;
-    balanceText.textContent = formatMoney(balance);
-
-    mineCountEl.min = 1;
-    mineCountEl.max = Math.max(1, N*N - 1);
+    resultModalEl.classList.add('show');
   }
 
-  function buildGrid(){
-    gridEl.innerHTML='';
-    gridEl.style.gridTemplateColumns=`repeat(${N},52px)`;
-    for(let i=0;i<N*N;i++){
-      const c=document.createElement('div');
-      c.className='cell';c.dataset.idx=i;
-      c.addEventListener('click',onCellClick);
-      gridEl.appendChild(c);
-    }
+  function hideResultModal() {
+    resultModalEl.classList.remove('show');
   }
 
-  function placeMines(){
-    mines.clear();
-    while(mines.size<M) mines.add(Math.floor(Math.random()*N*N));
-  }
-
-  // 安全格：显示💎，绿色+光晕
-  function reveal(idx){
-    if(revealed.has(idx)) return;
-    revealed.add(idx);
-    const el=gridEl.children[idx];
-    el.textContent='💎';
-    el.classList.add('revealed','flash');
-    el.addEventListener('animationend',()=>{ el.classList.remove('flash'); },{once:true});
-  }
-  function revealAllMines(){
-    mines.forEach(i=>{
-      const el=gridEl.children[i];
-      el.classList.add('revealed','mine');
-      el.textContent='💣';
+  async function api(path, options = {}) {
+    const response = await fetch(path, {
+      headers: { 'content-type': 'application/json' },
+      ...options,
     });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Request failed');
+    return data;
   }
 
-  function onCellClick(e){
-    if(!gameActive || exploded) return;
-    const idx=+e.currentTarget.dataset.idx;
-    if(revealed.has(idx)) return;
-
-    // 点击前的“当盘概率”（用于全清结算）
-    const total=N*N, opened=revealed.size;
-    const remainCells=total-opened, remainSafe=(total-M)-opened;
-    const pBefore = remainCells>0 ? (remainSafe/remainCells) : 0;
-    const payoutIfWin = pBefore>0 ? bet*0.97/pBefore : 0;
-
-    if(mines.has(idx)){
-      exploded=true; revealAllMines();
-      e.currentTarget.classList.add('mine'); e.currentTarget.textContent='💥';
-      log(`💥 触雷，损失 ${formatMoney(bet)}`);
-      gameActive=false; updateStartBtn(true);
-      updateHUD(); return;
+  function buildBoard(size) {
+    boardEl.innerHTML = '';
+    boardEl.style.gridTemplateColumns = `repeat(${size}, minmax(0, 1fr))`;
+    boardEl.style.gridTemplateRows = `repeat(${size}, minmax(0, 1fr))`;
+    for (let i = 0; i < size * size; i += 1) {
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'cell';
+      cell.dataset.index = i;
+      cell.setAttribute('aria-label', `Cell ${i + 1}`);
+      cell.addEventListener('click', () => revealCell(i));
+      boardEl.appendChild(cell);
     }
-
-    reveal(idx);
-
-    // 胜利（所有安全格都开完）
-    if(revealed.size >= total - M){
-      balance += payoutIfWin;
-      log(`🏆 全清，获得 ${formatMoney(payoutIfWin)}`);
-      gameActive=false; revealAllMines(); updateStartBtn(true);
-      updateHUD(); return;
-    }
-
-    updateHUD();
   }
 
-  // ------- 交互 -------
-  function validateSettings(){
-    N = parseInt(boardSizeEl.value,10) || 8;
-
-    let m = parseInt(mineCountEl.value,10);
-    m = clamp(isNaN(m)?1:m, 1, N*N - 1);
-    M = m; mineCountEl.value = m;
-
-    let b = parseFloat(betAmountEl.value);
-    if(isNaN(b)||b<=0) b=1;
-    bet = Math.floor(b*100)/100; betAmountEl.value=bet;
-  }
-
-  function resetBoardUI(keepMines=false){
-    if(!keepMines){ mines.clear(); }
-    revealed.clear(); exploded=false; gameActive=false;
-    buildGrid(); updateHUD();
-  }
-
-  // 开始 / 重开
-  startResetBtn.addEventListener('click', ()=>{
-    if(gameActive){
-      resetBoardUI(false);
-      updateStartBtn(true);
-      log('🔄 已重置本局（不影响余额）');
+  function updateActionState(active) {
+    if (active) {
+      actionBtn.textContent = 'Cash Out';
+      actionBtn.disabled = !currentGame || currentGame.safeClicks <= 0 || currentGame.cashout.current <= 0;
       return;
     }
-    validateSettings();
-    if(bet > balance){ log('⚠️ 余额不足，请先加钱或降低下注'); return; }
-    balance -= bet;
-    resetBoardUI(false);
-    validateSettings();
-    placeMines();
-    gameActive=true;
-    updateStartBtn(false);
-    log(`🎮 新局：${N}×${N}，雷 ${M}，下注 ${formatMoney(bet)}（已扣款）`);
-    updateHUD();
-  });
 
-  // 撤退
-  cashoutBtn.addEventListener('click', ()=>{
-    if(!gameActive || exploded) return;
-    const total=N*N, opened=revealed.size;
-    if(opened<=0){ log('ℹ️ 尚未点击安全格，无法撤退结算'); return; }
-    const remainCells=total-opened, remainSafe=(total-M)-opened;
-    if(remainCells<=0 || remainSafe<=0){ log('ℹ️ 当前无法结算'); return; }
-    const p = remainSafe/remainCells;
-    const payout = bet*0.97/p;
-    balance += payout;
-    log(`💰 撤退获得 ${formatMoney(payout)}`);
-    gameActive=false; revealAllMines(); updateStartBtn(true);
-    updateHUD();
-  });
+    actionBtn.disabled = false;
+    actionBtn.textContent = currentGame && terminalStatuses.has(currentGame.status) ? 'Next Round' : 'Start Round';
+  }
 
-  // 切换棋盘大小：写入默认雷数
-  boardSizeEl.addEventListener('change', ()=>{
-    if(gameActive){
-      log('ℹ️ 本局进行中，棋盘大小变更将于重开后生效');
+  function render() {
+    const size = currentGame?.size || Number(boardSizeEl.value || 5);
+    if (boardEl.children.length !== size * size) buildBoard(size);
+
+    const revealed = new Set(currentGame?.revealed || []);
+    const mines = new Set(currentGame?.mineIndexes || []);
+    const active = currentGame?.status === 'active';
+
+    Array.from(boardEl.children).forEach((cell, index) => {
+      cell.disabled = !active || revealed.has(index) || mines.has(index);
+      cell.textContent = '';
+      cell.classList.remove('open', 'mine');
+
+      if (revealed.has(index)) {
+        cell.classList.add('open');
+        cell.textContent = '💎';
+      }
+      if (mines.has(index)) {
+        cell.classList.add('mine');
+        cell.textContent = '💣';
+      }
+    });
+
+    boardSizeEl.disabled = active;
+    mineCountEl.disabled = active;
+    syncBetDisplay();
+
+    safeClicksEl.textContent = currentGame?.safeClicks || 0;
+    nextSafeEl.textContent = active ? percent(currentGame.nextSafeProbability) : '--';
+    cashoutValueEl.textContent = active && currentGame.safeClicks > 0 ? coins(currentGame.cashout.current) : '--';
+    balanceEl.textContent = coins(currentUser?.balance || 0);
+    updateActionState(active);
+  }
+
+  async function refresh() {
+    const data = await api(`/api/state?userId=${encodeURIComponent(playerId)}`);
+    currentUser = data.user;
+    currentGame = data.game;
+    applyBetLevels(data.config?.betLevels);
+    if (!currentGame) buildBoard(Number(boardSizeEl.value || 5));
+    render();
+  }
+
+  async function startRound() {
+    try {
+      const data = await api('/api/game/start', {
+        method: 'POST',
+        body: JSON.stringify({
+          userId: playerId,
+          size: Number(boardSizeEl.value),
+          mines: Number(mineCountEl.value),
+          bet: currentBet(),
+        }),
+      });
+      currentUser = data.user;
+      currentGame = data.game;
+      setLog(`Round started: ${currentGame.size} x ${currentGame.size}, ${currentGame.mines} mines.`);
+      render();
+    } catch (error) {
+      setLog(error.message);
+    }
+  }
+
+  async function revealCell(index) {
+    if (!currentGame || currentGame.status !== 'active') return;
+    try {
+      const data = await api('/api/game/reveal', {
+        method: 'POST',
+        body: JSON.stringify({ gameId: currentGame.id, index }),
+      });
+      currentUser = data.user;
+      currentGame = data.game;
+      if (data.result === 'mine') {
+        setLog('Mine hit. Press Next Round.');
+        showResultModal('loss');
+      }
+      if (data.result === 'safe') setLog('Safe cell opened.');
+      if (data.result === 'win') {
+        setLog(`Board cleared. Paid ${coins(data.payout.current)} coins.`);
+        showResultModal('win', data.payout.current);
+      }
+      render();
+    } catch (error) {
+      setLog(error.message);
+    }
+  }
+
+  async function cashout() {
+    if (!currentGame || currentGame.status !== 'active') return;
+    try {
+      const data = await api('/api/game/cashout', {
+        method: 'POST',
+        body: JSON.stringify({ gameId: currentGame.id }),
+      });
+      currentUser = data.user;
+      currentGame = data.game;
+      const capText = data.payout.capped ? ' Payout cap applied.' : '';
+      setLog(`Cashed out ${coins(data.payout.current)} coins.${capText}`);
+      showResultModal('win', data.payout.current);
+      render();
+    } catch (error) {
+      setLog(error.message);
+    }
+  }
+
+  async function handleAction() {
+    if (currentGame?.status === 'active') {
+      await cashout();
       return;
     }
-    N = parseInt(boardSizeEl.value,10) || 8;
-    mineCountEl.value = defaultMines(N);
-    validateSettings();
-    resetBoardUI(false);
-    log(`🧩 棋盘切换为 ${N}×${N}（默认雷数 ${M}），可继续调整雷数或开始游戏`);
-  });
-
-  // 地雷数修改（输入框）
-  mineCountEl.addEventListener('change', ()=>{
-    if(gameActive){ mineCountEl.value = M; log('⚠️ 本局进行中，无法修改地雷数'); return; }
-    validateSettings();
-    resetBoardUI(false);
-    log(`🧨 地雷数量设为 ${M}`);
-  });
-
-  // 地雷数 ±
-  function stepMine(delta){
-    if(gameActive){ log('⚠️ 本局进行中，无法修改地雷数'); return; }
-    const curr = parseInt(mineCountEl.value,10);
-    const next = clamp(isNaN(curr)?1:curr + delta, 1, N*N-1);
-    mineCountEl.value = next;
-    validateSettings();
-    resetBoardUI(false);
-    log(`🧨 地雷数量设为 ${M}`);
+    await startRound();
   }
-  mineMinusBtn.addEventListener('click', ()=>stepMine(-1));
-  minePlusBtn.addEventListener('click', ()=>stepMine(+1));
 
-  // 下注金额
-  betAmountEl.addEventListener('change', ()=>{
-    validateSettings();
-    if(gameActive){ log('ℹ️ 本局下注已锁定，修改将在下一局生效'); }
-    else{ log(`💵 下注金额设为 ${formatMoney(bet)}`); }
+  boardSizeEl.addEventListener('change', () => {
+    const size = Number(boardSizeEl.value);
+    mineCountEl.value = defaults[size] || Math.max(1, Math.floor(size * size * 0.18));
+    mineCountEl.max = size * size - 1;
+    currentGame = null;
+    buildBoard(size);
+    render();
   });
 
-  // 余额 +100
-  add100Btn.addEventListener('click', ()=>{
-    balance += 100; updateHUD(); log('💳 余额 +100');
+  actionBtn.addEventListener('click', handleAction);
+  betMinusBtn.addEventListener('click', () => {
+    if (currentGame?.status === 'active') return;
+    betIndex = Math.max(0, betIndex - 1);
+    syncBetDisplay();
   });
-
-  // 初始
-  (function init(){
-    mineCountEl.value = defaultMines(N);
-    validateSettings(); buildGrid(); updateHUD(); updateStartBtn(true);
-  })();
+  betPlusBtn.addEventListener('click', () => {
+    if (currentGame?.status === 'active') return;
+    betIndex = Math.min(betLevels.length - 1, betIndex + 1);
+    syncBetDisplay();
+  });
+  modalButtonEl.addEventListener('click', hideResultModal);
+  resultModalEl.addEventListener('click', (event) => {
+    if (event.target === resultModalEl) hideResultModal();
+  });
+  buildBoard(Number(boardSizeEl.value || 5));
+  refresh().catch((error) => setLog(error.message));
 })();
 </script>
 </body>

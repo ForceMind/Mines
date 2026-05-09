@@ -1,23 +1,46 @@
-# Mines 项目文档
+# Mines
 
-## 项目简介
-Mines 是一个包含 `index.html` 的前端项目，主要用于演示或实现扫雷相关功能。
+Server-side Mines game with an English 1:1 frontend, an admin page, and RTP protection controls.
 
-## 目录结构
+## Run
+
+```bash
+npm start
 ```
-index.html   # 项目主页面
-LICENSE      # 许可证文件
+
+Open:
+
+- Game: `http://127.0.0.1:3000`
+- Admin: `http://127.0.0.1:3000/admin`
+
+## Linux Deployment
+
+Run this from the project directory on the server:
+
+```bash
+sudo sh scripts/deploy-linux.sh
 ```
 
-## 快速开始
-1. 使用浏览器打开 `index.html` 文件。
-2. 查看页面效果。
+The script supports common Linux package managers including `apt`, `dnf`, `yum`, `zypper`, `pacman`, and `apk`. It installs Node.js 18+, copies the app to `/opt/mines`, creates a service user, writes `/etc/mines.env`, and registers a systemd or OpenRC service when available.
 
-## 依赖说明
-本项目为纯 HTML 文件，无需额外依赖。
+Useful overrides:
 
-## 许可证
-请参阅 `LICENSE` 文件了解详细的授权信息。
+```bash
+sudo APP_DIR=/opt/mines PORT=3000 HOST=0.0.0.0 sh scripts/deploy-linux.sh
+```
 
-## 联系方式
-如有问题或建议，请联系项目维护者。
+## Server Logic
+
+- Each click is decided on the server with the current mine probability.
+- The client sends only player actions: start, reveal, cash out, abandon, and deposit.
+- Player RTP is tracked as `totalPaidOut / totalWagered`.
+- When a player's RTP is below the protection floor and a click would normally lose, the server can apply the configured protection deviation and return a safe result instead.
+- Protection only applies when the cashout value after that safe result would still keep the player's cumulative RTP at or below the configured maximum.
+- Payouts are capped so the player's cumulative RTP cannot exceed the configured maximum RTP, which defaults to `100%`.
+
+## Files
+
+- `server.js` - HTTP server, APIs, game state, RTP logic, admin APIs.
+- `index.html` - English 1:1 game UI.
+- `admin.html` - runtime admin dashboard and protection settings.
+- `scripts/deploy-linux.sh` - one-command Linux deployment script.

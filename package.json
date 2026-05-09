@@ -1,0 +1,14 @@
+{
+  "name": "mines-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Server-side Mines game with an admin page and RTP protection controls.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "deploy:linux": "sh scripts/deploy-linux.sh"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
