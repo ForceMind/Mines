@@ -4,13 +4,13 @@ set -eu
 APP_NAME="${APP_NAME:-mines}"
 APP_DIR="${APP_DIR:-/opt/mines}"
 APP_USER="${APP_USER:-mines}"
-PORT="${PORT:-3000}"
+PORT="${PORT:-}"
 HOST="${HOST:-0.0.0.0}"
-SOURCE_DIR="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+SOURCE_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 
 need_root() {
   if [ "$(id -u)" != "0" ]; then
-    echo "Please run as root: sudo sh scripts/deploy-linux.sh"
+    echo "Please run as root: sudo sh deploy-linux.sh"
     exit 1
   fi
 }
@@ -39,6 +39,46 @@ install_packages() {
   else
     echo "Unsupported package manager. Install Node.js 18+ manually, then run again."
     exit 1
+  fi
+}
+
+ensure_git() {
+  if have_cmd git; then
+    return
+  fi
+  run_pkg_update
+  install_packages git
+}
+
+update_source_from_git() {
+  if [ ! -d "$SOURCE_DIR/.git" ]; then
+    echo "Git update check skipped: source directory is not a git repository."
+    return
+  fi
+
+  ensure_git
+  upstream="$(git -C "$SOURCE_DIR" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)"
+  if [ -z "$upstream" ]; then
+    echo "Git update check skipped: current branch has no upstream."
+    return
+  fi
+
+  echo "Checking git updates from ${upstream}..."
+  git -C "$SOURCE_DIR" fetch --all --prune
+  counts="$(git -C "$SOURCE_DIR" rev-list --left-right --count "HEAD...${upstream}")"
+  set -- $counts
+  ahead="${1:-0}"
+  behind="${2:-0}"
+
+  if [ "$ahead" -gt 0 ] && [ "$behind" -gt 0 ]; then
+    echo "Local branch and upstream diverged. Resolve git history before deployment."
+    exit 1
+  fi
+  if [ "$behind" -gt 0 ]; then
+    echo "Pulling ${behind} upstream commit(s)..."
+    git -C "$SOURCE_DIR" pull --ff-only --autostash
+  else
+    echo "Git source is up to date."
   fi
 }
 
@@ -71,6 +111,73 @@ install_node() {
     echo "Node.js 18+ is required. The distro repository installed an older version."
     echo "Install Node.js 20 manually or set up NodeSource, then rerun this script."
     exit 1
+  fi
+}
+
+load_existing_port() {
+  if [ -n "$PORT" ]; then
+    return
+  fi
+  if [ -f "/etc/${APP_NAME}.env" ]; then
+    old_port="$(sed -n 's/^PORT=//p' "/etc/${APP_NAME}.env" | tail -n 1)"
+    if [ -n "$old_port" ]; then
+      PORT="$old_port"
+    fi
+  fi
+  PORT="${PORT:-3000}"
+}
+
+stop_existing_service() {
+  if have_cmd systemctl && systemctl list-unit-files "${APP_NAME}.service" >/dev/null 2>&1; then
+    systemctl stop "${APP_NAME}" >/dev/null 2>&1 || true
+  fi
+  if have_cmd rc-service && [ -f "/etc/init.d/${APP_NAME}" ]; then
+    rc-service "${APP_NAME}" stop >/dev/null 2>&1 || true
+  fi
+}
+
+is_port_busy() {
+  port="$1"
+  if have_cmd ss; then
+    ss -H -ltn "sport = :${port}" 2>/dev/null | grep -q .
+    return $?
+  fi
+  if have_cmd netstat; then
+    netstat -ltn 2>/dev/null | grep -Eq "[.:]${port}[[:space:]]"
+    return $?
+  fi
+  if have_cmd lsof; then
+    lsof -nP -iTCP:"${port}" -sTCP:LISTEN >/dev/null 2>&1
+    return $?
+  fi
+  port_hex="$(printf '%04X' "$port")"
+  awk -v p=":${port_hex}" '$2 ~ p && $4 == "0A" { found=1 } END { exit found ? 0 : 1 }' /proc/net/tcp /proc/net/tcp6 2>/dev/null
+}
+
+resolve_port() {
+  case "$PORT" in
+    ''|*[!0-9]*)
+      echo "Invalid PORT value: ${PORT}"
+      exit 1
+      ;;
+  esac
+
+  requested_port="$PORT"
+  attempts=0
+  while is_port_busy "$PORT"; do
+    echo "Port ${PORT} is occupied, trying $((PORT + 1))..."
+    PORT=$((PORT + 1))
+    attempts=$((attempts + 1))
+    if [ "$attempts" -ge 100 ]; then
+      echo "No free port found from ${requested_port} to $((requested_port + 99))."
+      exit 1
+    fi
+  done
+
+  if [ "$PORT" != "$requested_port" ]; then
+    echo "Using available port ${PORT}."
+  else
+    echo "Port ${PORT} is available."
   fi
 }
 
@@ -189,7 +296,11 @@ EOF
 
 main() {
   need_root
+  update_source_from_git
   install_node
+  load_existing_port
+  stop_existing_service
+  resolve_port
   create_user
   copy_app
   write_env

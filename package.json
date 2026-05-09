@@ -6,7 +6,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "deploy:linux": "sh scripts/deploy-linux.sh"
+    "deploy:linux": "sh deploy-linux.sh"
   },
   "engines": {
     "node": ">=18"

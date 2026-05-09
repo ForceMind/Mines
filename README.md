@@ -18,15 +18,15 @@ Open:
 Run this from the project directory on the server:
 
 ```bash
-sudo sh scripts/deploy-linux.sh
+sudo sh deploy-linux.sh
 ```
 
-The script supports common Linux package managers including `apt`, `dnf`, `yum`, `zypper`, `pacman`, and `apk`. It installs Node.js 18+, copies the app to `/opt/mines`, creates a service user, writes `/etc/mines.env`, and registers a systemd or OpenRC service when available.
+The script supports common Linux package managers including `apt`, `dnf`, `yum`, `zypper`, `pacman`, and `apk`. It checks git upstream updates, installs Node.js 18+, detects port conflicts, copies the app to `/opt/mines`, creates a service user, writes `/etc/mines.env`, and registers a systemd or OpenRC service when available.
 
 Useful overrides:
 
 ```bash
-sudo APP_DIR=/opt/mines PORT=3000 HOST=0.0.0.0 sh scripts/deploy-linux.sh
+sudo APP_DIR=/opt/mines PORT=3000 HOST=0.0.0.0 sh deploy-linux.sh
 ```
 
 ## Server Logic
@@ -43,4 +43,4 @@ sudo APP_DIR=/opt/mines PORT=3000 HOST=0.0.0.0 sh scripts/deploy-linux.sh
 - `server.js` - HTTP server, APIs, game state, RTP logic, admin APIs.
 - `index.html` - English 1:1 game UI.
 - `admin.html` - runtime admin dashboard and protection settings.
-- `scripts/deploy-linux.sh` - one-command Linux deployment script.
+- `deploy-linux.sh` - one-command Linux deployment script.
