@@ -186,7 +186,7 @@
 
   .controls {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 172px 154px;
+    grid-template-columns: minmax(0, 1fr) 172px 154px;
     gap: 10px;
     align-items: end;
     padding: 10px 18px 12px;
@@ -222,6 +222,7 @@
   }
 
   .step-btn,
+  .mine-display,
   .bet-display {
     height: 38px;
     border-radius: 6px;
@@ -234,6 +235,7 @@
     font-size: 18px;
   }
 
+  .mine-display,
   .bet-display {
     display: grid;
     place-items: center;
@@ -372,6 +374,7 @@
   </section>
 
   <section class="controls">
+    <!-- Board size switch is disabled for now. Restore this block and the matching JS listener to re-enable board switching.
     <div class="field">
       <label for="boardSize">Board</label>
       <select id="boardSize">
@@ -381,10 +384,15 @@
         <option value="8">8 x 8</option>
       </select>
     </div>
+    -->
 
     <div class="field">
-      <label for="mineCount">Mines</label>
-      <input id="mineCount" type="number" min="1" max="63" step="1" value="5">
+      <label>Mines</label>
+      <div class="bet-stepper">
+        <button id="mineMinus" class="step-btn" type="button" aria-label="Decrease mines">-</button>
+        <div id="mineDisplay" class="mine-display">5</div>
+        <button id="minePlus" class="step-btn" type="button" aria-label="Increase mines">+</button>
+      </div>
     </div>
 
     <div class="field">
@@ -419,8 +427,9 @@
 (() => {
   const $ = (id) => document.getElementById(id);
   const boardEl = $('board');
-  const boardSizeEl = $('boardSize');
-  const mineCountEl = $('mineCount');
+  const mineMinusBtn = $('mineMinus');
+  const minePlusBtn = $('minePlus');
+  const mineDisplayEl = $('mineDisplay');
   const betMinusBtn = $('betMinus');
   const betPlusBtn = $('betPlus');
   const betDisplayEl = $('betDisplay');
@@ -440,13 +449,17 @@
   let currentUser = null;
   let betLevels = [1, 5, 10, 20, 50, 100];
   let betIndex = 2;
+  let mineCount = 5;
   let playerId = localStorage.getItem('minesPlayerId');
   if (!playerId) {
     playerId = `player-${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
     localStorage.setItem('minesPlayerId', playerId);
   }
 
-  const defaults = { 4: 3, 5: 5, 6: 8, 8: 12 };
+  const FIXED_BOARD_SIZE = 5;
+  const MIN_MINES = 1;
+  const MAX_MINES = FIXED_BOARD_SIZE * FIXED_BOARD_SIZE - 1;
+  // Future board size switch: restore the commented Board select in the HTML and set FIXED_BOARD_SIZE from that control.
   const terminalStatuses = new Set(['lost', 'won', 'cashed_out', 'abandoned']);
 
   function coins(value) {
@@ -474,6 +487,13 @@
     betDisplayEl.textContent = betMoney(currentBet());
     betMinusBtn.disabled = currentGame?.status === 'active' || betIndex <= 0;
     betPlusBtn.disabled = currentGame?.status === 'active' || betIndex >= betLevels.length - 1;
+  }
+
+  function syncMineDisplay() {
+    mineCount = Math.max(MIN_MINES, Math.min(MAX_MINES, mineCount));
+    mineDisplayEl.textContent = `${mineCount}`;
+    mineMinusBtn.disabled = currentGame?.status === 'active' || mineCount <= MIN_MINES;
+    minePlusBtn.disabled = currentGame?.status === 'active' || mineCount >= MAX_MINES;
   }
 
   function applyBetLevels(levels) {
@@ -542,7 +562,7 @@
   }
 
   function render() {
-    const size = currentGame?.size || Number(boardSizeEl.value || 5);
+    const size = currentGame?.size || FIXED_BOARD_SIZE;
     if (boardEl.children.length !== size * size) buildBoard(size);
 
     const revealed = new Set(currentGame?.revealed || []);
@@ -564,8 +584,7 @@
       }
     });
 
-    boardSizeEl.disabled = active;
-    mineCountEl.disabled = active;
+    syncMineDisplay();
     syncBetDisplay();
 
     safeClicksEl.textContent = currentGame?.safeClicks || 0;
@@ -580,7 +599,7 @@
     currentUser = data.user;
     currentGame = data.game;
     applyBetLevels(data.config?.betLevels);
-    if (!currentGame) buildBoard(Number(boardSizeEl.value || 5));
+    if (!currentGame) buildBoard(FIXED_BOARD_SIZE);
     render();
   }
 
@@ -590,8 +609,8 @@
         method: 'POST',
         body: JSON.stringify({
           userId: playerId,
-          size: Number(boardSizeEl.value),
-          mines: Number(mineCountEl.value),
+          size: FIXED_BOARD_SIZE,
+          mines: mineCount,
           bet: currentBet(),
         }),
       });
@@ -654,16 +673,19 @@
     await startRound();
   }
 
-  boardSizeEl.addEventListener('change', () => {
-    const size = Number(boardSizeEl.value);
-    mineCountEl.value = defaults[size] || Math.max(1, Math.floor(size * size * 0.18));
-    mineCountEl.max = size * size - 1;
-    currentGame = null;
-    buildBoard(size);
-    render();
-  });
+  // Future board size switch listener goes here when board switching is restored.
 
   actionBtn.addEventListener('click', handleAction);
+  mineMinusBtn.addEventListener('click', () => {
+    if (currentGame?.status === 'active') return;
+    mineCount -= 1;
+    syncMineDisplay();
+  });
+  minePlusBtn.addEventListener('click', () => {
+    if (currentGame?.status === 'active') return;
+    mineCount += 1;
+    syncMineDisplay();
+  });
   betMinusBtn.addEventListener('click', () => {
     if (currentGame?.status === 'active') return;
     betIndex = Math.max(0, betIndex - 1);
@@ -678,7 +700,8 @@
   resultModalEl.addEventListener('click', (event) => {
     if (event.target === resultModalEl) hideResultModal();
   });
-  buildBoard(Number(boardSizeEl.value || 5));
+  syncMineDisplay();
+  buildBoard(FIXED_BOARD_SIZE);
   refresh().catch((error) => setLog(error.message));
 })();
 </script>
