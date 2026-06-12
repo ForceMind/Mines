@@ -332,17 +332,18 @@
   let userViewMode = 'cumulative';
 
   const helpData = {
-    '状态': `<b>active</b>: 正在进行中<br>
-    <b>cashed_out</b>: 玩家主动提现结账<br>
-    <b>lost</b>: 踩雷输掉<br>
-    <b>abandoned</b>: 放弃/断线等`,
+    '状态': `游戏当前的进度状态：<br><br>
+    <b>进行中</b>: 玩家还在点格子，尚未结算。<br>
+    <b>已结算</b>: 玩家主动提现，拿走利润。<br>
+    <b>已踩雷</b>: 玩家踩到了地雷，输掉本局。<br>
+    <b>已放弃</b>: 因异常断线等原因被系统放弃。`,
     '结果': `<span style="color:var(--accent)">+ 绿色金额</span>：玩家净赚金额（派彩 - 下注）。<br>
     <span style="color:var(--danger)">- 红色金额</span>：玩家亏损金额（输掉全部下注）。`,
     '最后点击状态': `最后一次点击触发了什么判定逻辑。可能的情况有：<br><br>
-    <b style="color:var(--accent)">safe</b>: 正常点击到了安全格。<br>
-    <b style="color:var(--danger)">mine</b>: 正常踩到了地雷。<br>
-    <b style="color:var(--gold)">forced_safe</b>: 踩到地雷，但被连败拯救机制暗中调换为安全格。<br>
-    <b style="color:var(--danger)">forced_mine</b>: 为了控制平台赢面或奖池不足，被强制干预调换成的地雷（具体原因参考日志说明）。`,
+    <b style="color:var(--accent)">安全</b>: 正常点击到了安全格。<br>
+    <b style="color:var(--danger)">正常踩雷</b>: 完全随机地踩到了地雷。<br>
+    <b style="color:var(--danger)">奖池不足强杀</b>: 为了防止资金池被抽干，系统强行让玩家踩雷。<br>
+    <b style="color:var(--danger)">RTP限制不救</b>: 玩家原本触发了保护机制，但如果救了他提现会超过RTP上限，所以系统放弃拯救，让其爆炸。`,
     'RTP(全周期)': `玩家从建号以来的总回报率 = 总派彩 / 总下注。长线反映了该玩家是否处于亏损状态。`,
     'RTP(近期周期)': `根据在配置中设定的“RTP统计周期”计算出来的近期回报率。主要用于触发短期的连败拯救。`
   };
@@ -480,15 +481,22 @@
         }
       }
 
+      const statusMap = {
+        'active': '<span class="pill live">进行中</span>',
+        'cashed_out': '<span class="pill win">已结算</span>',
+        'lost': '<span class="pill lost">已踩雷</span>',
+        'abandoned': '<span class="pill">已放弃</span>'
+      };
+
       return `
         <tr>
-          <td title="${game.id}">${game.id.slice(0, 8)}</td>
+          <td>${game.id.slice(-6)}</td>
           <td>${game.userId}</td>
-          <td><span class="pill ${statusClass(game.status)}">${statusText(game.status)}</span></td>
+          <td>${statusMap[game.status] || game.status}</td>
           <td>${money(game.bet)}</td>
           <td>${resultText}</td>
           <td>${lastClickStatus}</td>
-          <td>${protectedCount} 次</td>
+          <td>${protectedCount}</td>
         </tr>
       `;
     }).join('') || '<tr><td colspan="7">暂无对局</td></tr>';
