@@ -120,6 +120,11 @@
   .mini-log div { margin-bottom: 2px; }
   .mini-log .forced { color: var(--danger); font-weight: bold; }
 
+  .help-btn { display: inline-flex; justify-content: center; align-items: center; width: 16px; height: 16px; background: rgba(255,255,255,0.15); color: var(--text); border-radius: 50%; font-size: 11px; cursor: pointer; margin-left: 6px; font-weight: normal; }
+  .help-btn:hover { background: var(--accent); color: #000; }
+  dialog { background: var(--panel); color: var(--text); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 24px; max-width: 500px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
+  dialog::backdrop { background: rgba(0,0,0,0.6); }
+
   @media (max-width: 860px) {
     .grid { grid-template-columns: 1fr; }
     header { align-items: start; flex-direction: column; }
@@ -146,18 +151,32 @@
   <div id="tab-overview" class="tab-content active">
     <section class="stats" id="stats"></section>
     
-    <div class="grid">
-      <aside class="card">
-        <div class="card-head">
-          <h2>系统配置</h2>
+    <section class="card">
+      <div class="card-head">
+        <h2>资金池管理</h2>
+      </div>
+      <div class="card-body" style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+        <p class="muted" style="margin:0; flex: 1; min-width: 200px;">调整当前资金池的金额。正数增加，负数减少。</p>
+        <div class="input-group" style="margin:0; min-width: 260px;">
+          <input id="poolAdjustAmount" type="number" step="1" value="1000" style="margin:0;">
+          <button id="adjustPoolBtn">调整</button>
         </div>
-        <div class="card-body" id="configForm">
-          <style>
-            .help-text { color: var(--muted); font-size: 11px; margin: -8px 0 12px 0; line-height: 1.4; }
-            fieldset { border: 1px solid var(--border); border-radius: 4px; margin-bottom: 20px; padding: 15px; }
-            legend { font-weight: bold; color: var(--accent); padding: 0 5px; }
-          </style>
+        <p id="poolNote" style="color:var(--muted); font-size:12px; margin:0; width: 120px;"></p>
+      </div>
+    </section>
 
+    <section class="card">
+      <div class="card-head">
+        <h2>系统配置</h2>
+      </div>
+      <div class="card-body" id="configForm">
+        <style>
+          .help-text { color: var(--muted); font-size: 11px; margin: -8px 0 12px 0; line-height: 1.4; }
+          fieldset { border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 15px; margin: 0; }
+          legend { font-weight: bold; color: var(--accent); padding: 0 5px; }
+        </style>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 16px;">
           <fieldset>
             <legend>1. 基础设定</legend>
             <label>平台优势</label>
@@ -176,7 +195,7 @@
             <div class="help-text">当资金池金额达到或超过此数值时，自动触发抽水。</div>
 
             <label>抽取方式</label>
-            <select id="autoDeductType" style="width:100%; padding:8px; margin-bottom:10px; border:1px solid var(--border); border-radius:4px; background:var(--bg);">
+            <select id="autoDeductType" style="width:100%; padding:8px; margin-bottom:10px; border:1px solid rgba(255,255,255,0.16); border-radius:6px; background:#f7fafc; color:var(--ink);">
               <option value="percent">按百分比</option>
               <option value="fixed">按固定金额</option>
             </select>
@@ -191,49 +210,33 @@
             <legend>3. 连败拯救保护机制</legend>
             <label>RTP 统计周期 (分钟)</label>
             <input id="rtpPeriodMinutes" type="number" min="0" step="1">
-            <div class="help-text">用来计算玩家当前是否需要被拯救的 RTP 数据回溯周期。设为 0 表示按照全生命周期算，设为 10080 代表按最近 7 天算。</div>
+            <div class="help-text">计算当前是否需要拯救的回溯周期。0 表示全生命周期，10080 代表近 7 天。</div>
 
             <label>保护触发 RTP 下限</label>
             <input id="protectionFloorRtp" type="number" min="0" max="1" step="0.01">
-            <div class="help-text">连败拯救门槛（如 0.8 = 80%）。玩家总 RTP 低于此值时，触发暗中拯救机制。</div>
+            <div class="help-text">连败拯救门槛（如 0.8 = 80%）。总 RTP 低于此值时触发。</div>
 
             <label>用户 RTP 上限</label>
             <input id="protectionMaxRtp" type="number" min="0.5" max="1" step="0.01">
-            <div class="help-text">玩家 RTP 天花板（如 1.0 = 100%）。若拯救后提现会导致 RTP 超过此值，则放弃拯救强行爆雷。</div>
+            <div class="help-text">玩家 RTP 天花板（如 1.0）。若拯救提现会超限则不救。</div>
 
-            <label>基础保护偏离值</label>
-            <input id="baseProtectionDeviation" type="number" min="0" max="1" step="0.01">
-            <div class="help-text">拯救成功的基础概率（如 0.12 = 12%）。触发拯救时，掷骰子把地雷换成安全格的起步概率。</div>
+            <label>基础/最大保护偏离值</label>
+            <div style="display:flex;gap:8px;">
+              <input id="baseProtectionDeviation" type="number" min="0" max="1" step="0.01" style="margin-bottom:0">
+              <input id="maxProtectionDeviation" type="number" min="0" max="1" step="0.01" style="margin-bottom:0">
+            </div>
+            <div class="help-text" style="margin-top:12px;">拯救成功的基础与极限概率（如 0.12 到 0.65）。</div>
 
-            <label>最大保护偏离值</label>
-            <input id="maxProtectionDeviation" type="number" min="0" max="1" step="0.01">
-            <div class="help-text">拯救成功的极限概率（如 0.65 = 65%）。玩家输得越惨，拯救概率越高，但不超过此值。</div>
-
-            <label>单局最大保护次数</label>
+            <label style="margin-top:12px;">单局最大保护次数</label>
             <input id="maxProtectionMoves" type="number" min="0" max="10" step="1">
             <div class="help-text">一局内最多允许把几次地雷偷偷换成安全格。</div>
           </fieldset>
+        </div>
 
-          <button id="saveBtn" style="width:100%">保存配置</button>
-          <p id="saveNote" style="color:var(--muted); font-size:12px; margin-top:10px;"></p>
-        </div>
-      </aside>
-
-      <aside class="card">
-        <div class="card-head">
-          <h2>资金池管理</h2>
-        </div>
-        <div class="card-body">
-          <p class="muted" style="margin-bottom:16px;">调整当前资金池的金额。正数增加，负数减少。</p>
-          <label>调整金额</label>
-          <div class="input-group">
-            <input id="poolAdjustAmount" type="number" step="1" value="1000">
-            <button id="adjustPoolBtn">调整</button>
-          </div>
-          <p id="poolNote" style="color:var(--muted); font-size:12px; margin-top:10px;"></p>
-        </div>
-      </aside>
-    </div>
+        <button id="saveBtn" style="width:100%">保存系统配置</button>
+        <p id="saveNote" style="color:var(--muted); font-size:12px; margin-top:10px;"></p>
+      </div>
+    </section>
   </div>
 
   <div id="tab-daily" class="tab-content">
@@ -266,10 +269,10 @@
             <tr>
               <th title="游戏的唯一标识号">局号</th>
               <th title="参与该局游戏的玩家ID">玩家</th>
-              <th title="该局当前处于什么状态">状态</th>
+              <th>状态 <span class="help-btn" onclick="showHelp('状态')">?</span></th>
               <th title="玩家在该局投入的金额">下注</th>
-              <th title="结算后玩家盈利(绿)或亏损(红)的金额">结果</th>
-              <th title="最后一次点击判定结果，若是强制结束则会高亮显示原因">最后点击状态</th>
+              <th>结果 <span class="help-btn" onclick="showHelp('结果')">?</span></th>
+              <th>最后点击状态 <span class="help-btn" onclick="showHelp('最后点击状态')">?</span></th>
               <th title="该局暗中把地雷偷偷换成安全格的成功次数">保护触发次数</th>
             </tr>
           </thead>
@@ -297,8 +300,8 @@
               <th id="userBalTh" title="玩家当前持有余额">余额</th>
               <th title="统计时间段内的总下注金额">下注总额</th>
               <th title="统计时间段内从系统拿走的总奖金">派彩总额</th>
-              <th title="总派彩 / 总下注 (即玩家个人长线回报率)">RTP(全周期)</th>
-              <th title="近期指定统计周期内的个人回报率">RTP(近期周期)</th>
+              <th>RTP(全周期) <span class="help-btn" onclick="showHelp('RTP(全周期)')">?</span></th>
+              <th>RTP(近期周期) <span class="help-btn" onclick="showHelp('RTP(近期周期)')">?</span></th>
               <th title="总共玩了多少局游戏">游戏局数</th>
             </tr>
           </thead>
@@ -327,6 +330,29 @@
   ];
   let cachedData = null;
   let userViewMode = 'cumulative';
+
+  const helpData = {
+    '状态': `<b>active</b>: 正在进行中<br>
+    <b>cashed_out</b>: 玩家主动提现结账<br>
+    <b>lost</b>: 踩雷输掉<br>
+    <b>abandoned</b>: 放弃/断线等`,
+    '结果': `<span style="color:var(--accent)">+ 绿色金额</span>：玩家净赚金额（派彩 - 下注）。<br>
+    <span style="color:var(--danger)">- 红色金额</span>：玩家亏损金额（输掉全部下注）。`,
+    '最后点击状态': `最后一次点击触发了什么判定逻辑。可能的情况有：<br><br>
+    <b style="color:var(--accent)">safe</b>: 正常点击到了安全格。<br>
+    <b style="color:var(--danger)">mine</b>: 正常踩到了地雷。<br>
+    <b style="color:var(--gold)">forced_safe</b>: 踩到地雷，但被连败拯救机制暗中调换为安全格。<br>
+    <b style="color:var(--danger)">forced_mine</b>: 为了控制平台赢面或奖池不足，被强制干预调换成的地雷（具体原因参考日志说明）。`,
+    'RTP(全周期)': `玩家从建号以来的总回报率 = 总派彩 / 总下注。长线反映了该玩家是否处于亏损状态。`,
+    'RTP(近期周期)': `根据在配置中设定的“RTP统计周期”计算出来的近期回报率。主要用于触发短期的连败拯救。`
+  };
+
+  window.showHelp = function(key) {
+    const dialog = document.getElementById('helpDialog');
+    document.getElementById('helpDialogTitle').innerText = key + ' 说明';
+    document.getElementById('helpDialogBody').innerHTML = helpData[key] || '暂无说明';
+    dialog.showModal();
+  };
 
   document.querySelectorAll('input[name="userViewType"]').forEach(radio => {
     radio.addEventListener('change', (e) => {
@@ -518,5 +544,13 @@
   loadDashboard();
 })();
 </script>
+
+<dialog id="helpDialog">
+  <h3 id="helpDialogTitle" style="margin-top:0; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:12px;">说明</h3>
+  <div id="helpDialogBody" style="line-height:1.6; font-size:14px; color:var(--muted); margin-bottom: 24px;"></div>
+  <div style="text-align:right;">
+    <button onclick="document.getElementById('helpDialog').close()">明白</button>
+  </div>
+</dialog>
 </body>
 </html>
