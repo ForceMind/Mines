@@ -291,15 +291,12 @@ function intendedPayout(game) {
 
 function payoutPreview(user, game) {
   const intended = intendedPayout(game);
-  const periodStats = getPeriodStats(user.id, config.rtpPeriodMinutes);
-  const userCap = toMoney(getPayoutRoom(user, periodStats));
   const poolCap = toMoney(prizePool);
-  const cap = Math.min(userCap, poolCap);
-  const current = toMoney(Math.min(intended, cap));
+  const current = toMoney(Math.min(intended, poolCap));
   return {
     intended,
     current,
-    cap,
+    cap: poolCap,
     capped: intended > current,
   };
 }
@@ -578,6 +575,7 @@ async function handleApi(req, res, url) {
     let protectionResult = null;
     let hitMine = baseRoll < mineProbability;
     let forcedByPool = false;
+    let forcedByRtpCap = false;
 
     if (hitMine) {
       protectionResult = tryProtectionSafe(user, game, index, baseRoll, mineProbability);
@@ -587,9 +585,15 @@ async function handleApi(req, res, url) {
     if (!hitMine) {
       const safeClicksAfter = game.revealed.size + 1;
       const potentialPayout = intendedPayoutForClicks(game, safeClicksAfter);
+      const periodStats = getPeriodStats(user.id, config.rtpPeriodMinutes);
+      const userCap = getPayoutRoom(user, periodStats);
+
       if (potentialPayout > prizePool) {
         hitMine = true;
         forcedByPool = true;
+      } else if (potentialPayout > userCap) {
+        hitMine = true;
+        forcedByRtpCap = true;
       }
     }
 
@@ -603,6 +607,7 @@ async function handleApi(req, res, url) {
       protected: Boolean(protectionResult && protectionResult.applied),
       protectionFailedReason: protectionResult && !protectionResult.applied ? protectionResult.reason : null,
       forcedByPool,
+      forcedByRtpCap,
     });
 
     if (hitMine) {

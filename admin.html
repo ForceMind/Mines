@@ -474,7 +474,7 @@
         const lastD = decisions[decisions.length - 1];
         if (game.status === 'lost') {
           if (lastD.forcedByPool) lastClickStatus = '<span class="forced" style="color:var(--danger)">奖池截杀</span>';
-          else if (lastD.protectionFailedReason === 'rtp_cap') lastClickStatus = '<span class="forced" style="color:var(--danger)">触顶不救</span>';
+          else if (lastD.forcedByRtpCap || lastD.protectionFailedReason === 'rtp_cap') lastClickStatus = '<span class="forced" style="color:var(--danger)">触顶不救</span>';
           else lastClickStatus = '<span style="color:var(--danger)">正常踩雷</span>';
         } else {
           if (lastD.protected) lastClickStatus = '<span style="color:var(--gold)">保护安全</span>';
