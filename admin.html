@@ -39,25 +39,35 @@
     justify-content: space-between;
     align-items: end;
     gap: 16px;
-    margin-bottom: 18px;
+    margin-bottom: 24px;
   }
-
-  h1,
-  h2 {
-    margin: 0;
-    line-height: 1.1;
-  }
-
-  h1 { font-size: 28px; }
-  h2 { font-size: 16px; }
-
+  
+  h1 { font-size: 28px; margin: 0; line-height: 1.1; }
+  h2 { font-size: 16px; margin: 0; line-height: 1.1; }
   a { color: #62e0bd; text-decoration: none; }
+  .muted { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
 
-  .muted {
-    margin: 6px 0 0;
-    color: var(--muted);
-    font-size: 13px;
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--line);
   }
+  .tab {
+    padding: 10px 16px;
+    cursor: pointer;
+    color: var(--muted);
+    border-bottom: 2px solid transparent;
+    font-weight: 600;
+  }
+  .tab.active {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
 
   .grid {
     display: grid;
@@ -70,123 +80,48 @@
     border-radius: 8px;
     background: rgba(23,32,45,.96);
     box-shadow: 0 18px 50px rgba(0,0,0,.24);
-  }
-
-  .card-head {
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--line);
-    background: rgba(255,255,255,.025);
-  }
-
-  .card-body { padding: 16px; }
-
-  label {
-    display: block;
-    margin: 0 0 6px;
-    color: var(--muted);
-    font-size: 12px;
-    font-weight: 650;
-  }
-
-  input {
-    width: 100%;
-    height: 38px;
-    margin-bottom: 12px;
-    border: 1px solid rgba(255,255,255,.16);
-    border-radius: 6px;
-    padding: 0 10px;
-    outline: none;
-    background: #f7fafc;
-    color: var(--ink);
-    font: inherit;
-  }
-
-  button {
-    height: 38px;
-    border: 1px solid transparent;
-    border-radius: 6px;
-    padding: 0 14px;
-    color: #06130f;
-    background: linear-gradient(180deg, #62e0bd, var(--accent));
-    font: inherit;
-    font-weight: 760;
-    cursor: pointer;
-  }
-
-  .full { width: 100%; }
-
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 10px;
     margin-bottom: 16px;
   }
+  .card-head { padding: 14px 16px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.025); }
+  .card-body { padding: 16px; overflow-x: auto; }
 
-  .stat {
-    min-height: 78px;
-    padding: 12px;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: rgba(255,255,255,.035);
+  label { display: block; margin: 0 0 6px; color: var(--muted); font-size: 12px; font-weight: 650; }
+  input {
+    width: 100%; height: 38px; margin-bottom: 12px;
+    border: 1px solid rgba(255,255,255,.16); border-radius: 6px;
+    padding: 0 10px; outline: none; background: #f7fafc; color: var(--ink); font: inherit;
+  }
+  .input-group { display: flex; gap: 8px; margin-bottom: 12px; }
+  .input-group input { margin-bottom: 0; }
+
+  button {
+    height: 38px; border: 1px solid transparent; border-radius: 6px; padding: 0 14px;
+    color: #06130f; background: linear-gradient(180deg, #62e0bd, var(--accent));
+    font: inherit; font-weight: 760; cursor: pointer; white-space: nowrap;
   }
 
-  .stat span {
-    display: block;
-    color: var(--muted);
-    font-size: 12px;
-  }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .stat { min-height: 78px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.035); }
+  .stat span { display: block; color: var(--muted); font-size: 12px; }
+  .stat strong { display: block; margin-top: 8px; font-size: 20px; }
+  
+  .pool-stat strong { color: var(--gold); }
 
-  .stat strong {
-    display: block;
-    margin-top: 8px;
-    font-size: 20px;
-  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 10px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  th { color: var(--muted); font-size: 12px; font-weight: 700; white-space: nowrap; }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-  }
-
-  th,
-  td {
-    padding: 10px 8px;
-    border-bottom: 1px solid var(--line);
-    text-align: left;
-    vertical-align: top;
-  }
-
-  th {
-    color: var(--muted);
-    font-size: 12px;
-    font-weight: 700;
-  }
-
-  .pill {
-    display: inline-flex;
-    align-items: center;
-    height: 22px;
-    padding: 0 8px;
-    border-radius: 999px;
-    background: rgba(255,255,255,.08);
-    color: var(--text);
-    font-size: 12px;
-  }
-
+  .pill { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; background: rgba(255,255,255,.08); color: var(--text); font-size: 12px; white-space: nowrap; }
   .pill.live { background: rgba(55,198,161,.18); color: #62e0bd; }
   .pill.lost { background: rgba(239,87,87,.18); color: #ff9b9b; }
   .pill.win { background: rgba(243,201,91,.18); color: var(--gold); }
-
-  .note {
-    min-height: 20px;
-    margin-top: 10px;
-    color: var(--muted);
-    font-size: 12px;
-  }
+  
+  .mini-log { font-size: 11px; color: var(--muted); margin-top: 4px; max-height: 80px; overflow-y: auto; background: rgba(0,0,0,.2); padding: 6px; border-radius: 4px; }
+  .mini-log div { margin-bottom: 2px; }
+  .mini-log .forced { color: var(--danger); font-weight: bold; }
 
   @media (max-width: 860px) {
     .grid { grid-template-columns: 1fr; }
-    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     header { align-items: start; flex-direction: column; }
   }
 </style>
@@ -196,125 +131,143 @@
   <header>
     <div>
       <h1>Mines 后台管理</h1>
-      <p class="muted">运行参数、玩家 RTP、派彩封顶和保护触发记录。</p>
+      <p class="muted">资金池、每日数据、每局详细数据及玩家管理。</p>
     </div>
     <a href="/">打开游戏</a>
   </header>
 
-  <div class="grid">
-    <aside class="card">
-      <div class="card-head">
-        <h2>保护配置</h2>
-      </div>
-      <div class="card-body" id="configForm">
-        <label for="houseEdge">平台优势</label>
-        <input id="houseEdge" type="number" min="0" max="0.25" step="0.01">
-
-        <label for="protectionFloorRtp">保护触发 RTP 下限</label>
-        <input id="protectionFloorRtp" type="number" min="0" max="1" step="0.01">
-
-        <label for="protectionMaxRtp">用户 RTP 上限</label>
-        <input id="protectionMaxRtp" type="number" min="0.5" max="1" step="0.01">
-
-        <label for="baseProtectionDeviation">基础保护偏离值</label>
-        <input id="baseProtectionDeviation" type="number" min="0" max="1" step="0.01">
-
-        <label for="maxProtectionDeviation">最大保护偏离值</label>
-        <input id="maxProtectionDeviation" type="number" min="0" max="1" step="0.01">
-
-        <label for="maxProtectionMoves">单局最大保护次数</label>
-        <input id="maxProtectionMoves" type="number" min="0" max="10" step="1">
-
-        <label for="betLevels">下注档位，英文逗号分隔</label>
-        <input id="betLevels" type="text" placeholder="1,5,10,20,50,100">
-
-        <button id="saveBtn" class="full">保存配置</button>
-        <p id="saveNote" class="note"></p>
-      </div>
-    </aside>
-
-    <main>
-      <section class="stats" id="stats"></section>
-
-      <section class="card">
-        <div class="card-head">
-          <h2>玩家列表</h2>
-        </div>
-        <div class="card-body">
-          <table>
-            <thead>
-              <tr>
-                <th>玩家</th>
-                <th>余额</th>
-                <th>下注总额</th>
-                <th>派彩总额</th>
-                <th>RTP</th>
-                <th>保护</th>
-              </tr>
-            </thead>
-            <tbody id="usersBody"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="card" style="margin-top:16px">
-        <div class="card-head">
-          <h2>最近局记录</h2>
-        </div>
-        <div class="card-body">
-          <table>
-            <thead>
-              <tr>
-                <th>局号</th>
-                <th>玩家</th>
-                <th>状态</th>
-                <th>下注</th>
-                <th>安全格</th>
-                <th>可提现</th>
-                <th>保护</th>
-              </tr>
-            </thead>
-            <tbody id="gamesBody"></tbody>
-          </table>
-        </div>
-      </section>
-    </main>
+  <div class="tabs">
+    <div class="tab active" data-target="tab-overview">概览与配置</div>
+    <div class="tab" data-target="tab-daily">每日数据</div>
+    <div class="tab" data-target="tab-games">每局数据</div>
+    <div class="tab" data-target="tab-users">用户数据</div>
   </div>
+
+  <div id="tab-overview" class="tab-content active">
+    <section class="stats" id="stats"></section>
+    
+    <div class="grid">
+      <aside class="card">
+        <div class="card-head">
+          <h2>系统配置</h2>
+        </div>
+        <div class="card-body" id="configForm">
+          <label>平台优势</label>
+          <input id="houseEdge" type="number" min="0" max="0.25" step="0.01">
+
+          <label>下注档位，英文逗号分隔</label>
+          <input id="betLevels" type="text" placeholder="1,5,10,20,50,100">
+
+          <button id="saveBtn" style="width:100%">保存配置</button>
+          <p id="saveNote" style="color:var(--muted); font-size:12px; margin-top:10px;"></p>
+        </div>
+      </aside>
+
+      <aside class="card">
+        <div class="card-head">
+          <h2>资金池管理</h2>
+        </div>
+        <div class="card-body">
+          <p class="muted" style="margin-bottom:16px;">调整当前资金池的金额。正数增加，负数减少。</p>
+          <label>调整金额</label>
+          <div class="input-group">
+            <input id="poolAdjustAmount" type="number" step="1" value="1000">
+            <button id="adjustPoolBtn">调整</button>
+          </div>
+          <p id="poolNote" style="color:var(--muted); font-size:12px; margin-top:10px;"></p>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div id="tab-daily" class="tab-content">
+    <section class="card">
+      <div class="card-head"><h2>每日数据</h2></div>
+      <div class="card-body">
+        <table>
+          <thead>
+            <tr>
+              <th>日期</th>
+              <th>总下注</th>
+              <th>总派彩</th>
+              <th>净利 (入池)</th>
+              <th>对局数</th>
+              <th>活跃用户数</th>
+            </tr>
+          </thead>
+          <tbody id="dailyBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div id="tab-games" class="tab-content">
+    <section class="card">
+      <div class="card-head"><h2>最近 100 局详细记录</h2></div>
+      <div class="card-body">
+        <table>
+          <thead>
+            <tr>
+              <th>局号</th>
+              <th>玩家</th>
+              <th>状态</th>
+              <th>下注</th>
+              <th>结果</th>
+              <th>点击明细与变动</th>
+            </tr>
+          </thead>
+          <tbody id="gamesBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div id="tab-users" class="tab-content">
+    <section class="card">
+      <div class="card-head"><h2>玩家列表</h2></div>
+      <div class="card-body">
+        <table>
+          <thead>
+            <tr>
+              <th>玩家</th>
+              <th>余额</th>
+              <th>下注总额</th>
+              <th>派彩总额</th>
+              <th>RTP</th>
+              <th>游戏局数</th>
+            </tr>
+          </thead>
+          <tbody id="usersBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
 </div>
 
 <script>
 (() => {
   const ids = [
-    'configForm', 'saveBtn', 'saveNote',
-    'stats', 'usersBody', 'gamesBody', 'houseEdge', 'protectionFloorRtp',
-    'protectionMaxRtp', 'baseProtectionDeviation', 'maxProtectionDeviation',
-    'maxProtectionMoves', 'betLevels'
+    'configForm', 'saveBtn', 'saveNote', 'adjustPoolBtn', 'poolAdjustAmount', 'poolNote',
+    'stats', 'dailyBody', 'usersBody', 'gamesBody', 'houseEdge', 'betLevels'
   ];
   const el = Object.fromEntries(ids.map((id) => [id, document.getElementById(id)]));
-  const configKeys = [
-    'houseEdge',
-    'protectionFloorRtp',
-    'protectionMaxRtp',
-    'baseProtectionDeviation',
-    'maxProtectionDeviation',
-    'maxProtectionMoves',
-  ];
+  const configKeys = ['houseEdge'];
 
-  function money(value) {
-    return `${Number(value || 0).toFixed(2)} 金币`;
-  }
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.target).classList.add('active');
+    });
+  });
 
-  function pct(value) {
-    return `${Number(value || 0).toFixed(2)}%`;
-  }
+  function money(value) { return `${Number(value || 0).toFixed(2)} 金币`; }
+  function pct(value) { return `${Number(value || 0).toFixed(2)}%`; }
 
   async function adminApi(path, options = {}) {
-    const response = await fetch(path, {
-      headers: {
-        'content-type': 'application/json',
-      },
-      ...options,
-    });
+    const response = await fetch(path, { headers: { 'content-type': 'application/json' }, ...options });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Request failed');
     return data;
@@ -327,107 +280,126 @@
   }
 
   function statusText(status) {
-    return {
-      active: '进行中',
-      lost: '已失败',
-      won: '已全开',
-      cashed_out: '已提现',
-      abandoned: '已结束',
-    }[status] || status;
-  }
-
-  function renderConfig(config) {
-    configKeys.forEach((key) => {
-      el[key].value = config[key];
-    });
-    el.betLevels.value = (config.betLevels || []).join(',');
+    return { active: '进行中', lost: '已踩雷', won: '已全开', cashed_out: '已提现', abandoned: '已弃局' }[status] || status;
   }
 
   function renderStats(totals) {
     el.stats.innerHTML = [
-      ['总余额', money(totals.balance)],
-      ['总下注', money(totals.totalWagered)],
-      ['总派彩', money(totals.totalPaidOut)],
-      ['系统 RTP', pct(totals.rtpPercent)],
-    ].map(([label, value]) => `
-      <div class="stat">
+      ['当前资金池', totals.prizePool, 'pool-stat'],
+      ['全站总下注', money(totals.totalWagered), ''],
+      ['全站总派彩', money(totals.totalPaidOut), ''],
+      ['系统 RTP', pct(totals.rtpPercent), ''],
+    ].map(([label, value, cls]) => `
+      <div class="stat ${cls}">
         <span>${label}</span>
         <strong>${value}</strong>
       </div>
     `).join('');
   }
 
-  function renderUsers(users) {
-    el.usersBody.innerHTML = users.map((user) => `
+  function renderDaily(daily) {
+    el.dailyBody.innerHTML = daily.map(d => `
       <tr>
-        <td>${user.id}</td>
-        <td>${money(user.balance)}</td>
-        <td>${money(user.totalWagered)}</td>
-        <td>${money(user.totalPaidOut)}</td>
-        <td>${pct(user.rtpPercent)}</td>
-        <td>${user.protectedMoves} 次</td>
+        <td>${d.date}</td>
+        <td>${d.wagered}</td>
+        <td>${d.paidOut}</td>
+        <td style="color:${parseFloat(d.profit) >= 0 ? 'var(--accent)' : 'var(--danger)'}">${d.profit}</td>
+        <td>${d.games}</td>
+        <td>${d.activeUsers}</td>
       </tr>
-    `).join('') || '<tr><td colspan="6">暂无玩家数据。前台有玩家打开游戏后会自动创建记录。</td></tr>';
+    `).join('') || '<tr><td colspan="6">暂无数据</td></tr>';
+  }
+
+  function renderUsers(users) {
+    el.usersBody.innerHTML = users.map((u) => `
+      <tr>
+        <td>${u.id}</td>
+        <td>${u.balance}</td>
+        <td>${u.totalWagered}</td>
+        <td>${u.totalPaidOut}</td>
+        <td>${u.rtpPercent}</td>
+        <td>${u.gamesPlayed}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="6">暂无数据</td></tr>';
   }
 
   function renderGames(games) {
     el.gamesBody.innerHTML = games.map((game) => {
-      const protection = game.protection || {};
-      const events = protection.events || [];
-      const protectionText = protection.active
-        ? `${protection.movesUsed}/${protection.movesUsed + protection.movesRemaining} 次，偏离 ${Number(protection.deviation || 0).toFixed(2)}`
-        : '未启用';
-      const eventText = events.length ? `（${events.length} 次改为安全）` : '';
+      let resultText = '-';
+      if (game.status !== 'active') {
+        if (game.status === 'lost' || game.status === 'abandoned') resultText = `0.00 (输掉 ${money(game.bet)})`;
+        else resultText = `赢 ${money(game.cashout.current)}`;
+      }
+      
+      const decisions = (game.decisions || []).map((d, i) => {
+        let text = `第${i+1}次点击(格${d.index}): `;
+        if (d.forcedByPool) {
+          text += `<span class="forced">因奖池不足强制踩雷!</span>`;
+        } else if (d.result === 'mine') {
+          text += `踩雷`;
+        } else {
+          text += `安全`;
+        }
+        return `<div>${text}</div>`;
+      }).join('');
+
       return `
         <tr>
           <td title="${game.id}">${game.id.slice(0, 8)}</td>
           <td>${game.userId}</td>
           <td><span class="pill ${statusClass(game.status)}">${statusText(game.status)}</span></td>
           <td>${money(game.bet)}</td>
-          <td>${game.safeClicks}/${game.size * game.size - game.mines}</td>
-          <td>${money(game.cashout.current)}${game.cashout.capped ? ' 已封顶' : ''}</td>
-          <td>${protectionText}${eventText}</td>
+          <td>${resultText}</td>
+          <td>
+            <div class="mini-log">
+              ${decisions || '无点击记录'}
+            </div>
+          </td>
         </tr>
       `;
-    }).join('') || '<tr><td colspan="7">暂无局记录。玩家开始游戏后会显示最近对局。</td></tr>';
+    }).join('') || '<tr><td colspan="6">暂无对局</td></tr>';
   }
 
   async function loadDashboard() {
     try {
       const data = await adminApi('/api/admin/summary');
-      renderConfig(data.config);
+      configKeys.forEach(key => { if(el[key]) el[key].value = data.config[key]; });
+      if(el.betLevels) el.betLevels.value = (data.config.betLevels || []).join(',');
+      
       renderStats(data.totals);
-      renderUsers(data.users);
+      renderDaily(data.daily);
       renderGames(data.games);
+      renderUsers(data.users);
     } catch (error) {
-      el.saveNote.textContent = error.message;
+      console.error(error);
     }
   }
 
-  async function saveConfig() {
+  el.saveBtn.addEventListener('click', async () => {
     const payload = {};
-    configKeys.forEach((key) => {
-      payload[key] = key === 'maxProtectionMoves' ? parseInt(el[key].value, 10) : Number(el[key].value);
-    });
-    payload.betLevels = el.betLevels.value
-      .split(',')
-      .map((item) => Number(item.trim()))
-      .filter((item) => Number.isFinite(item) && item > 0);
+    configKeys.forEach(key => { payload[key] = Number(el[key].value); });
+    payload.betLevels = el.betLevels.value.split(',').map(item => Number(item.trim())).filter(i => i > 0);
 
     try {
-      const data = await adminApi('/api/admin/config', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
-      renderConfig(data.config);
+      await adminApi('/api/admin/config', { method: 'POST', body: JSON.stringify(payload) });
       el.saveNote.textContent = '配置已保存。';
       await loadDashboard();
     } catch (error) {
       el.saveNote.textContent = error.message;
     }
-  }
+  });
 
-  el.saveBtn.addEventListener('click', saveConfig);
+  el.adjustPoolBtn.addEventListener('click', async () => {
+    try {
+      const amount = Number(el.poolAdjustAmount.value);
+      await adminApi('/api/admin/prizepool', { method: 'POST', body: JSON.stringify({ amount }) });
+      el.poolNote.textContent = '资金池已调整。';
+      await loadDashboard();
+    } catch (error) {
+      el.poolNote.textContent = error.message;
+    }
+  });
+
   loadDashboard();
 })();
 </script>

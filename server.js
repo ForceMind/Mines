@@ -24,6 +24,7 @@ const config = {
 
 const users = new Map();
 const games = new Map();
+let prizePool = 0;
 
 function gameToRecord(game) {
   return {
@@ -57,6 +58,7 @@ function saveState() {
   const data = {
     savedAt: nowIso(),
     config,
+    prizePool,
     users: Array.from(users.values()),
     games: Array.from(games.values()).map(gameToRecord),
   };
@@ -85,6 +87,9 @@ function loadState() {
         }
       });
       applyBetLevels(config.betLevels);
+    }
+    if (typeof data.prizePool === 'number') {
+      prizePool = data.prizePool;
     }
     if (Array.isArray(data.users)) {
       data.users.forEach((user) => {
@@ -235,7 +240,9 @@ function intendedPayout(game) {
 
 function payoutPreview(user, game) {
   const intended = intendedPayout(game);
-  const cap = toMoney(getPayoutRoom(user));
+  const userCap = toMoney(getPayoutRoom(user));
+  const poolCap = toMoney(prizePool);
+  const cap = Math.min(userCap, poolCap);
   const current = toMoney(Math.min(intended, cap));
   return {
     intended,
@@ -249,6 +256,7 @@ function settlePayout(user, game) {
   const preview = payoutPreview(user, game);
   user.balance = toMoney(user.balance + preview.current);
   user.totalPaidOut = toMoney(user.totalPaidOut + preview.current);
+  prizePool = toMoney(prizePool - preview.current);
   user.updatedAt = nowIso();
   return preview;
 }
@@ -463,6 +471,7 @@ async function handleApi(req, res, url) {
 
     user.balance = toMoney(user.balance - bet);
     user.totalWagered = toMoney(user.totalWagered + bet);
+    prizePool = toMoney(prizePool + bet);
     user.gamesPlayed += 1;
     user.updatedAt = nowIso();
     const protection = makeProtection(user);
@@ -514,9 +523,20 @@ async function handleApi(req, res, url) {
     const baseRoll = Math.random();
     let protectionResult = null;
     let hitMine = baseRoll < mineProbability;
+    let forcedByPool = false;
+
     if (hitMine) {
       protectionResult = tryProtectionSafe(user, game, index, baseRoll, mineProbability);
       if (protectionResult.applied) hitMine = false;
+    }
+
+    if (!hitMine) {
+      const safeClicksAfter = game.revealed.size + 1;
+      const potentialPayout = intendedPayoutForClicks(game, safeClicksAfter);
+      if (potentialPayout > prizePool) {
+        hitMine = true;
+        forcedByPool = true;
+      }
     }
 
     game.decisions.push({
@@ -527,6 +547,7 @@ async function handleApi(req, res, url) {
       mineProbability: publicNumber(mineProbability),
       result: hitMine ? 'mine' : 'safe',
       protected: Boolean(protectionResult && protectionResult.applied),
+      forcedByPool,
     });
 
     if (hitMine) {
@@ -632,25 +653,60 @@ async function handleApi(req, res, url) {
     if (req.method === 'GET' && url.pathname === '/api/admin/summary') {
       const userList = Array.from(users.values()).map(serializeUser);
       const gameList = Array.from(games.values())
-        .slice(-50)
         .reverse()
         .map((game) => serializeGame(game, getUser(game.userId), { revealMines: true, admin: true }));
+      
       const totals = userList.reduce((acc, user) => {
         acc.balance = toMoney(acc.balance + user.balance);
         acc.totalWagered = toMoney(acc.totalWagered + user.totalWagered);
         acc.totalPaidOut = toMoney(acc.totalPaidOut + user.totalPaidOut);
         acc.protectedMoves += user.protectedMoves;
         return acc;
-      }, { balance: 0, totalWagered: 0, totalPaidOut: 0, protectedMoves: 0 });
+      }, { balance: 0, totalWagered: 0, totalPaidOut: 0, protectedMoves: 0, prizePool: toMoney(prizePool) });
       totals.rtp = totals.totalWagered ? publicNumber(totals.totalPaidOut / totals.totalWagered) : 1;
       totals.rtpPercent = publicNumber(totals.rtp * 100, 2);
+
+      const dailyStats = {};
+      gameList.forEach((g) => {
+        const date = g.createdAt.split('T')[0];
+        if (!dailyStats[date]) {
+          dailyStats[date] = { date, wagered: 0, paidOut: 0, games: 0, users: new Set() };
+        }
+        dailyStats[date].wagered += g.bet;
+        if (g.cashout && g.status !== 'active' && g.status !== 'lost' && g.status !== 'abandoned') {
+          dailyStats[date].paidOut += g.cashout.current;
+        }
+        dailyStats[date].games += 1;
+        dailyStats[date].users.add(g.userId);
+      });
+      
+      const dailyList = Object.values(dailyStats).map(d => ({
+        date: d.date,
+        wagered: toMoney(d.wagered),
+        paidOut: toMoney(d.paidOut),
+        profit: toMoney(d.wagered - d.paidOut),
+        games: d.games,
+        activeUsers: d.users.size,
+      })).sort((a, b) => b.date.localeCompare(a.date));
 
       sendJson(res, 200, {
         config,
         totals,
         users: userList,
-        games: gameList,
+        games: gameList.slice(0, 100), // Only send last 100 games to avoid huge payload
+        daily: dailyList,
       });
+      return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/admin/prizepool') {
+      const body = await readBody(req);
+      const adjust = Number(body.amount);
+      if (Number.isFinite(adjust)) {
+        prizePool = toMoney(prizePool + adjust);
+        persistState();
+      }
+      sendJson(res, 200, { prizePool });
       return;
     }
 
