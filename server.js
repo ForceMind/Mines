@@ -694,26 +694,34 @@ async function handleApi(req, res, url) {
         dailyUserStats[userKey].games += 1;
       });
       
-      const dailyList = Object.values(dailyStats).map(d => ({
-        date: d.date,
-        wagered: toMoney(d.wagered),
-        paidOut: toMoney(d.paidOut),
-        profit: toMoney(d.wagered - d.paidOut),
-        games: d.games,
-        activeUsers: d.users.size,
-      })).sort((a, b) => b.date.localeCompare(a.date));
+      const dailyList = Object.values(dailyStats).map(d => {
+        const profit = d.wagered - d.paidOut;
+        const profitPct = d.wagered > 0 ? (profit / d.wagered * 100) : 0;
+        return {
+          date: d.date,
+          wagered: toMoney(d.wagered),
+          paidOut: toMoney(d.paidOut),
+          profit: `${toMoney(profit)} (${publicNumber(profitPct, 2)}%)`,
+          games: d.games,
+          activeUsers: d.users.size,
+        };
+      }).sort((a, b) => b.date.localeCompare(a.date));
 
       const dailyUsersList = Object.values(dailyUserStats).map(u => {
         const rtp = u.wagered ? u.paidOut / u.wagered : 1;
         return {
           date: u.date,
           userId: u.userId,
+          wagered_raw: u.wagered,
           wagered: toMoney(u.wagered),
           paidOut: toMoney(u.paidOut),
           rtpPercent: publicNumber(rtp * 100, 2),
           games: u.games,
         };
-      }).sort((a, b) => b.date.localeCompare(a.date));
+      }).sort((a, b) => {
+        if (a.date !== b.date) return b.date.localeCompare(a.date);
+        return b.wagered_raw - a.wagered_raw;
+      });
 
       sendJson(res, 200, {
         config,

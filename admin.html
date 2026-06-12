@@ -216,9 +216,9 @@
               <th>日期</th>
               <th>总下注</th>
               <th>总派彩</th>
-              <th>净利 (入池)</th>
+              <th>平台收入 (占比)</th>
               <th>对局数</th>
-              <th>活跃用户数</th>
+              <th>活跃玩家数</th>
             </tr>
           </thead>
           <tbody id="dailyBody"></tbody>
@@ -311,7 +311,7 @@
     });
   });
 
-  function money(value) { return `${Number(value || 0).toFixed(2)} 金币`; }
+  function money(value) { return `${Number(value || 0).toFixed(2)}`; }
   function pct(value) { return `${Number(value || 0).toFixed(2)}%`; }
 
   async function adminApi(path, options = {}) {
@@ -395,8 +395,12 @@
     el.gamesBody.innerHTML = games.map((game) => {
       let resultText = '-';
       if (game.status !== 'active') {
-        if (game.status === 'lost' || game.status === 'abandoned') resultText = `0.00 (输掉 ${money(game.bet)})`;
-        else resultText = `赢 ${money(game.cashout.current)}`;
+        if (game.status === 'lost' || game.status === 'abandoned') {
+          resultText = `<span style="color:var(--danger);">- ${money(game.bet)}</span>`;
+        } else {
+          const profit = game.cashout.current - game.bet;
+          resultText = `<span style="color:var(--accent);">+ ${money(profit)}</span>`;
+        }
       }
       
       const decisions = game.decisions || [];
