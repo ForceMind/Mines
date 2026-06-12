@@ -154,35 +154,65 @@
         <div class="card-body" id="configForm">
           <style>
             .help-text { color: var(--muted); font-size: 11px; margin: -8px 0 12px 0; line-height: 1.4; }
+            fieldset { border: 1px solid var(--border); border-radius: 4px; margin-bottom: 20px; padding: 15px; }
+            legend { font-weight: bold; color: var(--accent); padding: 0 5px; }
           </style>
 
-          <label>平台优势</label>
-          <input id="houseEdge" type="number" min="0" max="0.25" step="0.01">
-          <div class="help-text">平台抽水比例（如 0.03 = 3%）。降低玩家内部安全概率，作为保底利润来源。</div>
+          <fieldset>
+            <legend>1. 基础设定</legend>
+            <label>平台优势</label>
+            <input id="houseEdge" type="number" min="0" max="0.25" step="0.01">
+            <div class="help-text">平台抽水比例（如 0.03 = 3%）。降低玩家内部安全概率，作为保底利润来源。</div>
 
-          <label>保护触发 RTP 下限</label>
-          <input id="protectionFloorRtp" type="number" min="0" max="1" step="0.01">
-          <div class="help-text">连败拯救门槛（如 0.8 = 80%）。玩家总 RTP 低于此值时，触发暗中拯救机制。</div>
+            <label>下注档位，英文逗号分隔</label>
+            <input id="betLevels" type="text" placeholder="1,5,10,20,50,100">
+            <div class="help-text">前台供玩家点击选择的快捷下注金额。</div>
+          </fieldset>
 
-          <label>用户 RTP 上限</label>
-          <input id="protectionMaxRtp" type="number" min="0.5" max="1" step="0.01">
-          <div class="help-text">玩家 RTP 天花板（如 1.0 = 100%）。若拯救后提现会导致 RTP 超过此值，则放弃拯救强行爆雷。</div>
+          <fieldset>
+            <legend>2. 资金池自动抽水</legend>
+            <label>触发门槛 (为 0 则不启用)</label>
+            <input id="autoDeductThreshold" type="number" min="0" step="1">
+            <div class="help-text">当资金池金额达到或超过此数值时，自动触发抽水。</div>
 
-          <label>基础保护偏离值</label>
-          <input id="baseProtectionDeviation" type="number" min="0" max="1" step="0.01">
-          <div class="help-text">拯救成功的基础概率（如 0.12 = 12%）。触发拯救时，掷骰子把地雷换成安全格的起步概率。</div>
+            <label>抽取方式</label>
+            <select id="autoDeductType" style="width:100%; padding:8px; margin-bottom:10px; border:1px solid var(--border); border-radius:4px; background:var(--bg);">
+              <option value="percent">按百分比</option>
+              <option value="fixed">按固定金额</option>
+            </select>
+            <div class="help-text">选择每次抽水是扣除固定数值，还是当前资金池的百分比。</div>
 
-          <label>最大保护偏离值</label>
-          <input id="maxProtectionDeviation" type="number" min="0" max="1" step="0.01">
-          <div class="help-text">拯救成功的极限概率（如 0.65 = 65%）。玩家输得越惨，拯救概率越高，但不超过此值。</div>
+            <label>抽取数值</label>
+            <input id="autoDeductValue" type="number" min="0" step="0.1">
+            <div class="help-text">如果选择按百分比，填入 10 代表 10%。选择固定金额，填入 100 代表抽走 100 块。</div>
+          </fieldset>
 
-          <label>单局最大保护次数</label>
-          <input id="maxProtectionMoves" type="number" min="0" max="10" step="1">
-          <div class="help-text">一局内最多允许把几次地雷偷偷换成安全格。</div>
+          <fieldset>
+            <legend>3. 连败拯救保护机制</legend>
+            <label>RTP 统计周期 (分钟)</label>
+            <input id="rtpPeriodMinutes" type="number" min="0" step="1">
+            <div class="help-text">用来计算玩家当前是否需要被拯救的 RTP 数据回溯周期。设为 0 表示按照全生命周期算，设为 10080 代表按最近 7 天算。</div>
 
-          <label>下注档位，英文逗号分隔</label>
-          <input id="betLevels" type="text" placeholder="1,5,10,20,50,100">
-          <div class="help-text">前台供玩家点击选择的快捷下注金额。</div>
+            <label>保护触发 RTP 下限</label>
+            <input id="protectionFloorRtp" type="number" min="0" max="1" step="0.01">
+            <div class="help-text">连败拯救门槛（如 0.8 = 80%）。玩家总 RTP 低于此值时，触发暗中拯救机制。</div>
+
+            <label>用户 RTP 上限</label>
+            <input id="protectionMaxRtp" type="number" min="0.5" max="1" step="0.01">
+            <div class="help-text">玩家 RTP 天花板（如 1.0 = 100%）。若拯救后提现会导致 RTP 超过此值，则放弃拯救强行爆雷。</div>
+
+            <label>基础保护偏离值</label>
+            <input id="baseProtectionDeviation" type="number" min="0" max="1" step="0.01">
+            <div class="help-text">拯救成功的基础概率（如 0.12 = 12%）。触发拯救时，掷骰子把地雷换成安全格的起步概率。</div>
+
+            <label>最大保护偏离值</label>
+            <input id="maxProtectionDeviation" type="number" min="0" max="1" step="0.01">
+            <div class="help-text">拯救成功的极限概率（如 0.65 = 65%）。玩家输得越惨，拯救概率越高，但不超过此值。</div>
+
+            <label>单局最大保护次数</label>
+            <input id="maxProtectionMoves" type="number" min="0" max="10" step="1">
+            <div class="help-text">一局内最多允许把几次地雷偷偷换成安全格。</div>
+          </fieldset>
 
           <button id="saveBtn" style="width:100%">保存配置</button>
           <p id="saveNote" style="color:var(--muted); font-size:12px; margin-top:10px;"></p>
@@ -213,12 +243,12 @@
         <table>
           <thead>
             <tr>
-              <th>日期</th>
-              <th>总下注</th>
-              <th>总派彩</th>
-              <th>平台收入 (占比)</th>
-              <th>对局数</th>
-              <th>活跃玩家数</th>
+              <th title="产生数据的日期">日期</th>
+              <th title="当日全站所有玩家的下注总额">总下注</th>
+              <th title="当日全站派发给玩家的奖金总额">总派彩</th>
+              <th title="当日流入资金池的净利金额及其占总下注的百分比">平台收入 (占比)</th>
+              <th title="当日共进行了多少局游戏">对局数</th>
+              <th title="当日至少有一次下注动作的独立玩家数量">活跃玩家数</th>
             </tr>
           </thead>
           <tbody id="dailyBody"></tbody>
@@ -234,13 +264,13 @@
         <table>
           <thead>
             <tr>
-              <th>局号</th>
-              <th>玩家</th>
-              <th>状态</th>
-              <th>下注</th>
-              <th>结果</th>
-              <th>最后点击状态</th>
-              <th>保护触发次数</th>
+              <th title="游戏的唯一标识号">局号</th>
+              <th title="参与该局游戏的玩家ID">玩家</th>
+              <th title="该局当前处于什么状态">状态</th>
+              <th title="玩家在该局投入的金额">下注</th>
+              <th title="结算后玩家盈利(绿)或亏损(红)的金额">结果</th>
+              <th title="最后一次点击判定结果，若是强制结束则会高亮显示原因">最后点击状态</th>
+              <th title="该局暗中把地雷偷偷换成安全格的成功次数">保护触发次数</th>
             </tr>
           </thead>
           <tbody id="gamesBody"></tbody>
@@ -262,13 +292,14 @@
         <table>
           <thead>
             <tr>
-              <th id="userDateTh" style="display:none;">日期</th>
-              <th>玩家</th>
-              <th id="userBalTh">余额</th>
-              <th>下注总额</th>
-              <th>派彩总额</th>
-              <th>RTP</th>
-              <th>游戏局数</th>
+              <th id="userDateTh" style="display:none;" title="产生数据的日期">日期</th>
+              <th title="玩家的唯一标识ID">玩家</th>
+              <th id="userBalTh" title="玩家当前持有余额">余额</th>
+              <th title="统计时间段内的总下注金额">下注总额</th>
+              <th title="统计时间段内从系统拿走的总奖金">派彩总额</th>
+              <th title="总派彩 / 总下注 (即玩家个人长线回报率)">RTP(全周期)</th>
+              <th title="近期指定统计周期内的个人回报率">RTP(近期周期)</th>
+              <th title="总共玩了多少局游戏">游戏局数</th>
             </tr>
           </thead>
           <tbody id="usersBody"></tbody>
@@ -285,12 +316,14 @@
     'configForm', 'saveBtn', 'saveNote', 'adjustPoolBtn', 'poolAdjustAmount', 'poolNote',
     'stats', 'dailyBody', 'usersBody', 'gamesBody', 'houseEdge', 'protectionFloorRtp',
     'protectionMaxRtp', 'baseProtectionDeviation', 'maxProtectionDeviation',
-    'maxProtectionMoves', 'betLevels', 'userDateTh', 'userBalTh'
+    'maxProtectionMoves', 'betLevels', 'userDateTh', 'userBalTh',
+    'autoDeductThreshold', 'autoDeductType', 'autoDeductValue', 'rtpPeriodMinutes'
   ];
   const el = Object.fromEntries(ids.map((id) => [id, document.getElementById(id)]));
   const configKeys = [
     'houseEdge', 'protectionFloorRtp', 'protectionMaxRtp',
-    'baseProtectionDeviation', 'maxProtectionDeviation', 'maxProtectionMoves'
+    'baseProtectionDeviation', 'maxProtectionDeviation', 'maxProtectionMoves',
+    'autoDeductThreshold', 'autoDeductType', 'autoDeductValue', 'rtpPeriodMinutes'
   ];
   let cachedData = null;
   let userViewMode = 'cumulative';
@@ -334,6 +367,7 @@
   function renderStats(totals) {
     el.stats.innerHTML = [
       ['当前资金池', totals.prizePool, 'pool-stat'],
+      ['平台已自动抽水', money(totals.totalPlatformDeducted || 0), 'pool-stat'],
       ['全站总下注', money(totals.totalWagered), ''],
       ['全站总派彩', money(totals.totalPaidOut), ''],
       ['系统 RTP', pct(totals.rtpPercent), ''],
@@ -370,10 +404,11 @@
           <td style="display:none;"></td>
           <td>${u.wagered}</td>
           <td>${u.paidOut}</td>
-          <td>${u.rtpPercent}</td>
+          <td>${pct(u.rtpPercent)}</td>
+          <td>-</td>
           <td>${u.games}</td>
         </tr>
-      `).join('') || '<tr><td colspan="6">暂无数据</td></tr>';
+      `).join('') || '<tr><td colspan="8">暂无数据</td></tr>';
     } else {
       el.userDateTh.style.display = 'none';
       el.userBalTh.style.display = '';
@@ -384,10 +419,11 @@
           <td>${u.balance}</td>
           <td>${u.totalWagered}</td>
           <td>${u.totalPaidOut}</td>
-          <td>${u.rtpPercent}</td>
+          <td>${pct(u.rtpPercent)}</td>
+          <td>${u.periodRtpPercent !== undefined ? pct(u.periodRtpPercent) : '-'}</td>
           <td>${u.gamesPlayed}</td>
         </tr>
-      `).join('') || '<tr><td colspan="6">暂无数据</td></tr>';
+      `).join('') || '<tr><td colspan="8">暂无数据</td></tr>';
     }
   }
 
@@ -450,7 +486,13 @@
 
   el.saveBtn.addEventListener('click', async () => {
     const payload = {};
-    configKeys.forEach(key => { payload[key] = Number(el[key].value); });
+    configKeys.forEach(key => {
+      if (key === 'autoDeductType') {
+        payload[key] = el[key].value;
+      } else {
+        payload[key] = Number(el[key].value);
+      }
+    });
     payload.betLevels = el.betLevels.value.split(',').map(item => Number(item.trim())).filter(i => i > 0);
 
     try {

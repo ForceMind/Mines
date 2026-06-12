@@ -16,6 +16,9 @@ const config = {
   baseProtectionDeviation: 0.12,
   maxProtectionDeviation: 0.65,
   maxProtectionMoves: 3,
+  autoDeductThreshold: 0,
+  autoDeductType: 'percent',
+  autoDeductValue: 0,
   minBet: 1,
   maxBet: 1000,
   betLevels: [1, 5, 10, 20, 50, 100],
@@ -25,6 +28,7 @@ const config = {
 const users = new Map();
 const games = new Map();
 let prizePool = 0;
+let totalPlatformDeducted = 0;
 
 function gameToRecord(game) {
   return {
@@ -59,6 +63,7 @@ function saveState() {
     savedAt: nowIso(),
     config,
     prizePool,
+    totalPlatformDeducted,
     users: Array.from(users.values()),
     games: Array.from(games.values()).map(gameToRecord),
   };
@@ -90,6 +95,9 @@ function loadState() {
     }
     if (typeof data.prizePool === 'number') {
       prizePool = data.prizePool;
+    }
+    if (typeof data.totalPlatformDeducted === 'number') {
+      totalPlatformDeducted = data.totalPlatformDeducted;
     }
     if (Array.isArray(data.users)) {
       data.users.forEach((user) => {
@@ -168,12 +176,38 @@ function getUser(userId = 'demo') {
   return users.get(id);
 }
 
-function getRtp(user) {
+function getPeriodStats(userId, periodMinutes) {
+  if (!periodMinutes || periodMinutes <= 0) {
+    const user = users.get(userId);
+    return { wagered: user ? user.totalWagered : 0, paidOut: user ? user.totalPaidOut : 0 };
+  }
+  const cutoff = new Date(Date.now() - periodMinutes * 60 * 1000).toISOString();
+  let wagered = 0;
+  let paidOut = 0;
+  for (const game of games.values()) {
+    if (game.userId === userId && game.createdAt >= cutoff) {
+      wagered += game.bet;
+      if ((game.status === 'cashed_out' || game.status === 'won') && game.cashout) {
+        paidOut += game.cashout.current;
+      }
+    }
+  }
+  return { wagered, paidOut };
+}
+
+function getRtp(user, periodStats = null) {
+  if (periodStats) {
+    if (!periodStats.wagered) return 1;
+    return periodStats.paidOut / periodStats.wagered;
+  }
   if (!user.totalWagered) return 1;
   return user.totalPaidOut / user.totalWagered;
 }
 
-function getPayoutRoom(user) {
+function getPayoutRoom(user, periodStats = null) {
+  if (periodStats) {
+    return Math.max(0, periodStats.wagered * config.protectionMaxRtp - periodStats.paidOut);
+  }
   return Math.max(0, user.totalWagered * config.protectionMaxRtp - user.totalPaidOut);
 }
 
@@ -182,10 +216,27 @@ function getActiveGame(userId) {
   return ordered.find((game) => game.userId === userId && game.status === 'active') || null;
 }
 
+function checkAutoDeductPool() {
+  if (config.autoDeductThreshold > 0 && prizePool >= config.autoDeductThreshold) {
+    let deduct = 0;
+    if (config.autoDeductType === 'percent') {
+      deduct = prizePool * (config.autoDeductValue / 100);
+    } else {
+      deduct = config.autoDeductValue;
+    }
+    if (deduct > prizePool) deduct = prizePool;
+    if (deduct > 0) {
+      prizePool = toMoney(prizePool - deduct);
+      totalPlatformDeducted = toMoney(totalPlatformDeducted + deduct);
+    }
+  }
+}
+
 function makeProtection(user, rtpBasis, payoutRoom) {
-  const rtp = Number.isFinite(rtpBasis) ? rtpBasis : getRtp(user);
+  const periodStats = getPeriodStats(user.id, config.rtpPeriodMinutes);
+  const rtp = Number.isFinite(rtpBasis) ? rtpBasis : getRtp(user, periodStats);
   const shortfall = Math.max(0, config.protectionFloorRtp - rtp);
-  const availablePayoutRoom = Number.isFinite(payoutRoom) ? payoutRoom : getPayoutRoom(user);
+  const availablePayoutRoom = Number.isFinite(payoutRoom) ? payoutRoom : getPayoutRoom(user, periodStats);
   const active = shortfall > 0 && availablePayoutRoom > 0 && config.maxProtectionMoves > 0;
   const deviation = active
     ? clamp(config.baseProtectionDeviation + shortfall * 1.25, 0, config.maxProtectionDeviation)
@@ -240,7 +291,8 @@ function intendedPayout(game) {
 
 function payoutPreview(user, game) {
   const intended = intendedPayout(game);
-  const userCap = toMoney(getPayoutRoom(user));
+  const periodStats = getPeriodStats(user.id, config.rtpPeriodMinutes);
+  const userCap = toMoney(getPayoutRoom(user, periodStats));
   const poolCap = toMoney(prizePool);
   const cap = Math.min(userCap, poolCap);
   const current = toMoney(Math.min(intended, cap));
@@ -262,14 +314,15 @@ function settlePayout(user, game) {
 }
 
 function tryProtectionSafe(user, game, clickedIndex, baseRoll, mineProbability) {
-  const payoutRoom = getPayoutRoom(user);
+  const periodStats = getPeriodStats(user.id, config.rtpPeriodMinutes);
+  const payoutRoom = getPayoutRoom(user, periodStats);
   const safeClicksAfter = game.revealed.size + 1;
   const protectedPayout = intendedPayoutForClicks(game, safeClicksAfter);
 
   if (!game.protection.active || game.protection.movesRemaining <= 0) {
     return { applied: false, reason: 'inactive' };
   }
-  if (getRtp(user) >= config.protectionFloorRtp) {
+  if (getRtp(user, periodStats) >= config.protectionFloorRtp) {
     return { applied: false, reason: 'rtp_not_low' };
   }
   if (protectedPayout > payoutRoom + 0.0001) {
@@ -472,6 +525,7 @@ async function handleApi(req, res, url) {
     user.balance = toMoney(user.balance - bet);
     user.totalWagered = toMoney(user.totalWagered + bet);
     prizePool = toMoney(prizePool + bet);
+    checkAutoDeductPool();
     user.gamesPlayed += 1;
     user.updatedAt = nowIso();
     const protection = makeProtection(user);
@@ -652,7 +706,12 @@ async function handleApi(req, res, url) {
 
   if (url.pathname.startsWith('/api/admin')) {
     if (req.method === 'GET' && url.pathname === '/api/admin/summary') {
-      const userList = Array.from(users.values()).map(serializeUser);
+      const userList = Array.from(users.values()).map(user => {
+        const serialized = serializeUser(user);
+        const periodStats = getPeriodStats(user.id, config.rtpPeriodMinutes);
+        serialized.periodRtpPercent = publicNumber(getRtp(user, periodStats) * 100, 2);
+        return serialized;
+      });
       const gameList = Array.from(games.values())
         .reverse()
         .map((game) => serializeGame(game, getUser(game.userId), { revealMines: true, admin: true }));
@@ -663,7 +722,7 @@ async function handleApi(req, res, url) {
         acc.totalPaidOut = toMoney(acc.totalPaidOut + user.totalPaidOut);
         acc.protectedMoves += user.protectedMoves;
         return acc;
-      }, { balance: 0, totalWagered: 0, totalPaidOut: 0, protectedMoves: 0, prizePool: toMoney(prizePool) });
+      }, { balance: 0, totalWagered: 0, totalPaidOut: 0, protectedMoves: 0, prizePool: toMoney(prizePool), totalPlatformDeducted: toMoney(totalPlatformDeducted) });
       totals.rtp = totals.totalWagered ? publicNumber(totals.totalPaidOut / totals.totalWagered) : 1;
       totals.rtpPercent = publicNumber(totals.rtp * 100, 2);
 
@@ -727,7 +786,7 @@ async function handleApi(req, res, url) {
         config,
         totals,
         users: userList,
-        games: gameList.slice(0, 100), // Only send last 100 games to avoid huge payload
+        games: gameList.slice(0, 100),
         daily: dailyList,
         dailyUsers: dailyUsersList,
       });
@@ -739,6 +798,7 @@ async function handleApi(req, res, url) {
       const adjust = Number(body.amount);
       if (Number.isFinite(adjust)) {
         prizePool = toMoney(prizePool + adjust);
+        if (adjust > 0) checkAutoDeductPool();
         persistState();
       }
       sendJson(res, 200, { prizePool });
