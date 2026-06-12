@@ -547,6 +547,7 @@ async function handleApi(req, res, url) {
       mineProbability: publicNumber(mineProbability),
       result: hitMine ? 'mine' : 'safe',
       protected: Boolean(protectionResult && protectionResult.applied),
+      protectionFailedReason: protectionResult && !protectionResult.applied ? protectionResult.reason : null,
       forcedByPool,
     });
 
@@ -667,17 +668,30 @@ async function handleApi(req, res, url) {
       totals.rtpPercent = publicNumber(totals.rtp * 100, 2);
 
       const dailyStats = {};
+      const dailyUserStats = {};
+
       gameList.forEach((g) => {
         const date = g.createdAt.split('T')[0];
         if (!dailyStats[date]) {
           dailyStats[date] = { date, wagered: 0, paidOut: 0, games: 0, users: new Set() };
         }
+        const userKey = `${date}_${g.userId}`;
+        if (!dailyUserStats[userKey]) {
+          dailyUserStats[userKey] = { date, userId: g.userId, wagered: 0, paidOut: 0, games: 0 };
+        }
+
         dailyStats[date].wagered += g.bet;
+        dailyUserStats[userKey].wagered += g.bet;
+
         if (g.cashout && g.status !== 'active' && g.status !== 'lost' && g.status !== 'abandoned') {
           dailyStats[date].paidOut += g.cashout.current;
+          dailyUserStats[userKey].paidOut += g.cashout.current;
         }
+        
         dailyStats[date].games += 1;
         dailyStats[date].users.add(g.userId);
+        
+        dailyUserStats[userKey].games += 1;
       });
       
       const dailyList = Object.values(dailyStats).map(d => ({
@@ -689,12 +703,25 @@ async function handleApi(req, res, url) {
         activeUsers: d.users.size,
       })).sort((a, b) => b.date.localeCompare(a.date));
 
+      const dailyUsersList = Object.values(dailyUserStats).map(u => {
+        const rtp = u.wagered ? u.paidOut / u.wagered : 1;
+        return {
+          date: u.date,
+          userId: u.userId,
+          wagered: toMoney(u.wagered),
+          paidOut: toMoney(u.paidOut),
+          rtpPercent: publicNumber(rtp * 100, 2),
+          games: u.games,
+        };
+      }).sort((a, b) => b.date.localeCompare(a.date));
+
       sendJson(res, 200, {
         config,
         totals,
         users: userList,
         games: gameList.slice(0, 100), // Only send last 100 games to avoid huge payload
         daily: dailyList,
+        dailyUsers: dailyUsersList,
       });
       return;
     }

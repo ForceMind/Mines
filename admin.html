@@ -152,11 +152,37 @@
           <h2>系统配置</h2>
         </div>
         <div class="card-body" id="configForm">
+          <style>
+            .help-text { color: var(--muted); font-size: 11px; margin: -8px 0 12px 0; line-height: 1.4; }
+          </style>
+
           <label>平台优势</label>
           <input id="houseEdge" type="number" min="0" max="0.25" step="0.01">
+          <div class="help-text">平台抽水比例（如 0.03 = 3%）。降低玩家内部安全概率，作为保底利润来源。</div>
+
+          <label>保护触发 RTP 下限</label>
+          <input id="protectionFloorRtp" type="number" min="0" max="1" step="0.01">
+          <div class="help-text">连败拯救门槛（如 0.8 = 80%）。玩家总 RTP 低于此值时，触发暗中拯救机制。</div>
+
+          <label>用户 RTP 上限</label>
+          <input id="protectionMaxRtp" type="number" min="0.5" max="1" step="0.01">
+          <div class="help-text">玩家 RTP 天花板（如 1.0 = 100%）。若拯救后提现会导致 RTP 超过此值，则放弃拯救强行爆雷。</div>
+
+          <label>基础保护偏离值</label>
+          <input id="baseProtectionDeviation" type="number" min="0" max="1" step="0.01">
+          <div class="help-text">拯救成功的基础概率（如 0.12 = 12%）。触发拯救时，掷骰子把地雷换成安全格的起步概率。</div>
+
+          <label>最大保护偏离值</label>
+          <input id="maxProtectionDeviation" type="number" min="0" max="1" step="0.01">
+          <div class="help-text">拯救成功的极限概率（如 0.65 = 65%）。玩家输得越惨，拯救概率越高，但不超过此值。</div>
+
+          <label>单局最大保护次数</label>
+          <input id="maxProtectionMoves" type="number" min="0" max="10" step="1">
+          <div class="help-text">一局内最多允许把几次地雷偷偷换成安全格。</div>
 
           <label>下注档位，英文逗号分隔</label>
           <input id="betLevels" type="text" placeholder="1,5,10,20,50,100">
+          <div class="help-text">前台供玩家点击选择的快捷下注金额。</div>
 
           <button id="saveBtn" style="width:100%">保存配置</button>
           <p id="saveNote" style="color:var(--muted); font-size:12px; margin-top:10px;"></p>
@@ -213,7 +239,8 @@
               <th>状态</th>
               <th>下注</th>
               <th>结果</th>
-              <th>点击明细与变动</th>
+              <th>最后点击状态</th>
+              <th>保护触发次数</th>
             </tr>
           </thead>
           <tbody id="gamesBody"></tbody>
@@ -224,13 +251,20 @@
 
   <div id="tab-users" class="tab-content">
     <section class="card">
-      <div class="card-head"><h2>玩家列表</h2></div>
+      <div class="card-head" style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="margin:0;">玩家列表</h2>
+        <div>
+          <label style="display:inline-flex; align-items:center; margin-right:12px; cursor:pointer;"><input type="radio" name="userViewType" value="cumulative" checked style="width:16px;height:16px;margin:0 6px 0 0;">按累计</label>
+          <label style="display:inline-flex; align-items:center; cursor:pointer;"><input type="radio" name="userViewType" value="daily" style="width:16px;height:16px;margin:0 6px 0 0;">按日期</label>
+        </div>
+      </div>
       <div class="card-body">
         <table>
           <thead>
             <tr>
+              <th id="userDateTh" style="display:none;">日期</th>
               <th>玩家</th>
-              <th>余额</th>
+              <th id="userBalTh">余额</th>
               <th>下注总额</th>
               <th>派彩总额</th>
               <th>RTP</th>
@@ -249,10 +283,24 @@
 (() => {
   const ids = [
     'configForm', 'saveBtn', 'saveNote', 'adjustPoolBtn', 'poolAdjustAmount', 'poolNote',
-    'stats', 'dailyBody', 'usersBody', 'gamesBody', 'houseEdge', 'betLevels'
+    'stats', 'dailyBody', 'usersBody', 'gamesBody', 'houseEdge', 'protectionFloorRtp',
+    'protectionMaxRtp', 'baseProtectionDeviation', 'maxProtectionDeviation',
+    'maxProtectionMoves', 'betLevels', 'userDateTh', 'userBalTh'
   ];
   const el = Object.fromEntries(ids.map((id) => [id, document.getElementById(id)]));
-  const configKeys = ['houseEdge'];
+  const configKeys = [
+    'houseEdge', 'protectionFloorRtp', 'protectionMaxRtp',
+    'baseProtectionDeviation', 'maxProtectionDeviation', 'maxProtectionMoves'
+  ];
+  let cachedData = null;
+  let userViewMode = 'cumulative';
+
+  document.querySelectorAll('input[name="userViewType"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      userViewMode = e.target.value;
+      if (cachedData) renderUsers();
+    });
+  });
 
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -310,17 +358,37 @@
     `).join('') || '<tr><td colspan="6">暂无数据</td></tr>';
   }
 
-  function renderUsers(users) {
-    el.usersBody.innerHTML = users.map((u) => `
-      <tr>
-        <td>${u.id}</td>
-        <td>${u.balance}</td>
-        <td>${u.totalWagered}</td>
-        <td>${u.totalPaidOut}</td>
-        <td>${u.rtpPercent}</td>
-        <td>${u.gamesPlayed}</td>
-      </tr>
-    `).join('') || '<tr><td colspan="6">暂无数据</td></tr>';
+  function renderUsers() {
+    if (!cachedData) return;
+    if (userViewMode === 'daily') {
+      el.userDateTh.style.display = '';
+      el.userBalTh.style.display = 'none';
+      el.usersBody.innerHTML = cachedData.dailyUsers.map((u) => `
+        <tr>
+          <td>${u.date}</td>
+          <td>${u.userId}</td>
+          <td style="display:none;"></td>
+          <td>${u.wagered}</td>
+          <td>${u.paidOut}</td>
+          <td>${u.rtpPercent}</td>
+          <td>${u.games}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="6">暂无数据</td></tr>';
+    } else {
+      el.userDateTh.style.display = 'none';
+      el.userBalTh.style.display = '';
+      el.usersBody.innerHTML = cachedData.users.map((u) => `
+        <tr>
+          <td style="display:none;"></td>
+          <td>${u.id}</td>
+          <td>${u.balance}</td>
+          <td>${u.totalWagered}</td>
+          <td>${u.totalPaidOut}</td>
+          <td>${u.rtpPercent}</td>
+          <td>${u.gamesPlayed}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="6">暂无数据</td></tr>';
+    }
   }
 
   function renderGames(games) {
@@ -331,17 +399,20 @@
         else resultText = `赢 ${money(game.cashout.current)}`;
       }
       
-      const decisions = (game.decisions || []).map((d, i) => {
-        let text = `第${i+1}次点击(格${d.index}): `;
-        if (d.forcedByPool) {
-          text += `<span class="forced">因奖池不足强制踩雷!</span>`;
-        } else if (d.result === 'mine') {
-          text += `踩雷`;
+      const decisions = game.decisions || [];
+      const protectedCount = decisions.filter(d => d.protected).length;
+      let lastClickStatus = '-';
+      
+      if (decisions.length > 0) {
+        const lastD = decisions[decisions.length - 1];
+        if (game.status === 'lost') {
+          if (lastD.forcedByPool) lastClickStatus = '<span class="forced">奖池不足强杀</span>';
+          else if (lastD.protectionFailedReason === 'rtp_cap') lastClickStatus = '<span class="forced">RTP限制不救</span>';
+          else lastClickStatus = '正常踩雷';
         } else {
-          text += `安全`;
+          lastClickStatus = '安全';
         }
-        return `<div>${text}</div>`;
-      }).join('');
+      }
 
       return `
         <tr>
@@ -350,26 +421,24 @@
           <td><span class="pill ${statusClass(game.status)}">${statusText(game.status)}</span></td>
           <td>${money(game.bet)}</td>
           <td>${resultText}</td>
-          <td>
-            <div class="mini-log">
-              ${decisions || '无点击记录'}
-            </div>
-          </td>
+          <td>${lastClickStatus}</td>
+          <td>${protectedCount} 次</td>
         </tr>
       `;
-    }).join('') || '<tr><td colspan="6">暂无对局</td></tr>';
+    }).join('') || '<tr><td colspan="7">暂无对局</td></tr>';
   }
 
   async function loadDashboard() {
     try {
-      const data = await adminApi('/api/admin/summary');
+      cachedData = await adminApi('/api/admin/summary');
+      const data = cachedData;
       configKeys.forEach(key => { if(el[key]) el[key].value = data.config[key]; });
       if(el.betLevels) el.betLevels.value = (data.config.betLevels || []).join(',');
       
       renderStats(data.totals);
       renderDaily(data.daily);
       renderGames(data.games);
-      renderUsers(data.users);
+      renderUsers();
     } catch (error) {
       console.error(error);
     }
