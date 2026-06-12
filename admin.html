@@ -335,15 +335,15 @@
     '状态': `游戏当前的进度状态：<br><br>
     <b>进行中</b>: 玩家还在点格子，尚未结算。<br>
     <b>已结算</b>: 玩家主动提现，拿走利润。<br>
-    <b>已踩雷</b>: 玩家踩到了地雷，输掉本局。<br>
-    <b>已放弃</b>: 因异常断线等原因被系统放弃。`,
+    <b>已踩雷</b>: 玩家踩到了地雷，输掉本局。`,
     '结果': `<span style="color:var(--accent)">+ 绿色金额</span>：玩家净赚金额（派彩 - 下注）。<br>
     <span style="color:var(--danger)">- 红色金额</span>：玩家亏损金额（输掉全部下注）。`,
-    '最后点击状态': `最后一次点击触发了什么判定逻辑。可能的情况有：<br><br>
-    <b style="color:var(--accent)">安全</b>: 正常点击到了安全格。<br>
+    '最后点击状态': `该局最后一次点击触发的判定逻辑。分为以下5种：<br><br>
+    <b style="color:var(--accent)">正常安全</b>: 完全凭概率和运气点击到了安全格。<br>
+    <b style="color:var(--gold)">保护安全</b>: 实际上点到了地雷，但系统触发连败拯救暗中换成了安全格。<br>
     <b style="color:var(--danger)">正常踩雷</b>: 完全随机地踩到了地雷。<br>
-    <b style="color:var(--danger)">奖池不足强杀</b>: 为了防止资金池被抽干，系统强行让玩家踩雷。<br>
-    <b style="color:var(--danger)">RTP限制不救</b>: 玩家原本触发了保护机制，但如果救了他提现会超过RTP上限，所以系统放弃拯救，让其爆炸。`,
+    <b style="color:var(--danger)">奖池截杀</b>: 奖池不足以支付潜在盈利，系统强行改掉原本的安全格，让玩家踩雷。<br>
+    <b style="color:var(--danger)">触顶不救</b>: 玩家本该被拯救，但提现会导致 RTP 超过上限，系统放弃干预，任其爆炸。`,
     'RTP(全周期)': `玩家从建号以来的总回报率 = 总派彩 / 总下注。长线反映了该玩家是否处于亏损状态。`,
     'RTP(近期周期)': `根据在配置中设定的“RTP统计周期”计算出来的近期回报率。主要用于触发短期的连败拯救。`
   };
@@ -473,11 +473,12 @@
       if (decisions.length > 0) {
         const lastD = decisions[decisions.length - 1];
         if (game.status === 'lost') {
-          if (lastD.forcedByPool) lastClickStatus = '<span class="forced">奖池不足强杀</span>';
-          else if (lastD.protectionFailedReason === 'rtp_cap') lastClickStatus = '<span class="forced">RTP限制不救</span>';
-          else lastClickStatus = '正常踩雷';
+          if (lastD.forcedByPool) lastClickStatus = '<span class="forced" style="color:var(--danger)">奖池截杀</span>';
+          else if (lastD.protectionFailedReason === 'rtp_cap') lastClickStatus = '<span class="forced" style="color:var(--danger)">触顶不救</span>';
+          else lastClickStatus = '<span style="color:var(--danger)">正常踩雷</span>';
         } else {
-          lastClickStatus = '安全';
+          if (lastD.protected) lastClickStatus = '<span style="color:var(--gold)">保护安全</span>';
+          else lastClickStatus = '<span style="color:var(--accent)">正常安全</span>';
         }
       }
 
